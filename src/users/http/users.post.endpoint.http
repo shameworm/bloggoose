@@ -1,9 +1,152 @@
-## Create users endpoint
+## Create user (valid) - expect 201
 POST http://localhost:3000/users
 Content-Type: application/json
+
 {
-    "fullName": "John Doe",
-    "age": 19,
+    "firstName": "John",
+    "lastName": "Doe",
+    "username": "makarena",
     "email": "johndoe@example.com",
-    "password": "veryoriginalpassword"
+    "password": "Veryoriginal1!"
 }
+
+###
+## No firstName/lastName (both @IsOptional) - expect 201
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Missing email (@IsNotEmpty) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Invalid email format (@IsEmail) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe-at-example",
+    "password": "Veryoriginal1!"
+}
+
+###
+## firstName too short, 2 chars (@MinLength(3)) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "firstName": "Jo",
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## lastName too short, 2 chars (@MinLength(3)) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "lastName": "Do",
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## username too short, 7 chars (@MinLength(8)) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makaren",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## username too long, 26 chars (@MaxLength(25)) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarenaaaaaaaaaaaaaaaaaaa",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## password too short, 7 chars (@MinLength(8)) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Ver1!ab"
+}
+
+###
+## password without uppercase (@Matches) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "veryoriginal1!"
+}
+
+###
+## password without number (@Matches) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal!"
+}
+
+###
+## password without special character (@Matches) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1"
+}
+
+###
+## wrong types: firstName number, email not a string (@IsString) - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "firstName": 123,
+    "username": "makarena",
+    "email": 456,
+    "password": "Veryoriginal1!"
+}
+
+###
+## empty body, every required field missing - expect 400
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{}

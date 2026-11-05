@@ -1,0 +1,6 @@
+## Delete post - expect 204 (or 404 if it doesn't exist)
+DELETE http://localhost:3000/posts/1
+
+###
+## Non-numeric id (ParseIntPipe) - expect 400
+DELETE http://localhost:3000/posts/abc

@@ -1,0 +1,58 @@
+## Users live in memory, so create user 1 first (see users.post.endpoint.http)
+
+## Create post (valid) - expect 201
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": 1,
+    "text": "A post long enough to pass the thirty character minimum."
+}
+
+###
+## Unknown author - expect 404
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": 999,
+    "text": "A post long enough to pass the thirty character minimum."
+}
+
+###
+## text too short, under 30 chars (@MinLength(30)) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": 1,
+    "text": "Too short"
+}
+
+###
+## authorId as string (@IsInt) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": "1",
+    "text": "A post long enough to pass the thirty character minimum."
+}
+
+###
+## Client-sent id (forbidNonWhitelisted) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "id": 5,
+    "authorId": 1,
+    "text": "A post long enough to pass the thirty character minimum."
+}
+
+###
+## Empty body, every required field missing - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{}

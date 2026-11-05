@@ -1,0 +1,22 @@
+## Get posts (default limit=10, page=1) - expect 200
+GET http://localhost:3000/posts
+
+###
+## Get posts with pagination - expect 200
+GET http://localhost:3000/posts?limit=5&page=1
+
+###
+## limit above 100 (@Max(100)) - expect 400
+GET http://localhost:3000/posts?limit=500
+
+###
+## Get post by id - expect 200 (or 404 if it doesn't exist)
+GET http://localhost:3000/posts/1
+
+###
+## Unknown post id - expect 404
+GET http://localhost:3000/posts/999
+
+###
+## Non-numeric id (ParseIntPipe) - expect 400
+GET http://localhost:3000/posts/abc

@@ -1,0 +1,50 @@
+## Patch text - expect 200
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "text": "An edited post that is still over thirty characters."
+}
+
+###
+## Empty body, every field optional via PartialType - expect 200
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{}
+
+###
+## Changing the author (omitted from PatchPostDto) - expect 400
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "authorId": 2
+}
+
+###
+## text too short (@MinLength(30)) - expect 400
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "text": "Too short"
+}
+
+###
+## Unknown post id - expect 404
+PATCH http://localhost:3000/posts/999
+Content-Type: application/json
+
+{
+    "text": "An edited post that is still over thirty characters."
+}
+
+###
+## Non-numeric id (ParseIntPipe) - expect 400
+PATCH http://localhost:3000/posts/abc
+Content-Type: application/json
+
+{
+    "text": "An edited post that is still over thirty characters."
+}

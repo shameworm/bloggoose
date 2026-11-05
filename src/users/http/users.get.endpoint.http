@@ -1,0 +1,8 @@
+## Get user endpoint
+GET http://localhost:3000/users/123
+?limit=5
+&offset=20
+## Get users endpoint
+GET http://localhost:3000/users/
+
+

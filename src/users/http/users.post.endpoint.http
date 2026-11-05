@@ -1,0 +1,9 @@
+## Create users endpoint
+POST http://localhost:3000/users
+Content-Type: application/json
+{
+    "fullName": "John Doe",
+    "age": 19,
+    "email": "johndoe@example.com",
+    "password": "veryoriginalpassword"
+}

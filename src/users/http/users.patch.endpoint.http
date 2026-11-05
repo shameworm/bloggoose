@@ -1,0 +1,7 @@
+## Patch users endpoint
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "age": 20
+}

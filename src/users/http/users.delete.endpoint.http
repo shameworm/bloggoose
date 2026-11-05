@@ -1,0 +1,2 @@
+## Delete users endpoint
+DELETE http://localhost:3000/users/123

@@ -1,7 +1,123 @@
-## Patch users endpoint
+## Patch user email only - expect 200
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "email": "newmail@example.com"
+}
+
+###
+## Patch firstName and lastName - expect 200
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "firstName": "Johnny",
+    "lastName": "Doey"
+}
+
+###
+## Patch username - expect 200
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "username": "makarena2"
+}
+
+###
+## Patch password (valid) - expect 200
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "password": "Veryoriginal2!"
+}
+
+###
+## Empty body, every field optional via PartialType - expect 200
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{}
+
+###
+## Unknown property "age" (forbidNonWhitelisted) - expect 400
 PATCH http://localhost:3000/users/123
 Content-Type: application/json
 
 {
     "age": 20
+}
+
+###
+## Unknown property "isAuth" (forbidNonWhitelisted) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "isAuth": true
+}
+
+###
+## Invalid email format (@IsEmail) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "email": "newmail-at-example"
+}
+
+###
+## firstName too short, 2 chars (@MinLength(3)) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "firstName": "Jo"
+}
+
+###
+## username too short, 7 chars (@MinLength(8)) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "username": "makaren"
+}
+
+###
+## username too long, 26 chars (@MaxLength(25)) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "username": "makarenaaaaaaaaaaaaaaaaaaa"
+}
+
+###
+## password without special character (@Matches) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "password": "Veryoriginal2"
+}
+
+###
+## wrong type, email as number (@IsString, @IsEmail) - expect 400
+PATCH http://localhost:3000/users/123
+Content-Type: application/json
+
+{
+    "email": 456
+}
+
+###
+## Non-numeric id is not validated because updateUser has no @Param() - expect 200
+PATCH http://localhost:3000/users/not-a-number
+Content-Type: application/json
+
+{
+    "firstName": "Johnny"
 }

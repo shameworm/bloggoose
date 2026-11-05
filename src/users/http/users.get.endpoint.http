@@ -1,8 +1,10 @@
 ## Get user endpoint
 GET http://localhost:3000/users/123
 ?limit=5
-&offset=20
-## Get users endpoint
+&page=1
+## Get user without limit and page (default values check)
+GET http://localhost:3000/users/123
+## Get users
 GET http://localhost:3000/users/
 
 

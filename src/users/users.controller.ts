@@ -1,55 +1,53 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Put,
-  Delete,
-  Param,
-  Query,
   Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
   ParseIntPipe,
-  DefaultValuePipe,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
 
 import { CreateUserDto } from './dtos/create-user.dto.js';
-import { GetUserParamDto } from './dtos/get-users-param.dto.js';
+import { PaginationQueryDto } from './dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
+import type { PublicUser } from './interfaces/user.interface.js';
+import { UsersService } from './users.service.js';
 
 @Controller('users')
 export class UsersController {
-  @Get(['/', '/:id'])
-  public getUser(
-    @Param() getUserParamDto: GetUserParamDto,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  ) {
-    console.log(getUserParamDto);
-    console.log(limit);
-    console.log(typeof limit);
-    console.log(page);
-    console.log(typeof page);
-    return 'You sent a get request to User endpoints';
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  public findAll(@Query() paginationQuery: PaginationQueryDto): PublicUser[] {
+    return this.usersService.findAll(paginationQuery);
+  }
+
+  @Get(':id')
+  public findById(@Param('id', ParseIntPipe) id: number): PublicUser {
+    return this.usersService.findById(id);
   }
 
   @Post()
-  public createUser(@Body() createUserDto: CreateUserDto) {
-    console.log(createUserDto instanceof CreateUserDto);
-    return createUserDto;
+  public create(@Body() createUserDto: CreateUserDto): PublicUser {
+    return this.usersService.create(createUserDto);
   }
 
-  @Delete('/:id')
-  public deleteUser() {
-    return 'You sent a delete request to User endpoints';
+  @Patch(':id')
+  public update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() patchUserDto: PatchUserDto,
+  ): PublicUser {
+    return this.usersService.update(id, patchUserDto);
   }
 
-  @Put('/:id')
-  public replaceUser() {
-    return 'You sent a put request to User endpoints';
-  }
-
-  @Patch('/:id')
-  public updateUser(@Body() patchUserDto: PatchUserDto) {
-    return patchUserDto;
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public remove(@Param('id', ParseIntPipe) id: number): void {
+    this.usersService.remove(id);
   }
 }

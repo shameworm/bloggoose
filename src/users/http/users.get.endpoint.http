@@ -1,10 +1,18 @@
-## Get user endpoint
-GET http://localhost:3000/users/123
-?limit=5
-&page=1
-## Get user without limit and page (default values check)
-GET http://localhost:3000/users/123
-## Get users
-GET http://localhost:3000/users/
+## Get users (default limit=10, page=1) - expect 200
+GET http://localhost:3000/users
 
+###
+## Get users with pagination - expect 200
+GET http://localhost:3000/users?limit=5&page=1
 
+###
+## limit above 100 (@Max(100)) - expect 400
+GET http://localhost:3000/users?limit=500
+
+###
+## Get user by id - expect 200 (or 404 if it doesn't exist)
+GET http://localhost:3000/users/1
+
+###
+## Non-numeric id (ParseIntPipe) - expect 400
+GET http://localhost:3000/users/abc

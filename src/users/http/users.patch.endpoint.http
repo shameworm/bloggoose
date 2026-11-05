@@ -1,5 +1,5 @@
 ## Patch user email only - expect 200
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -8,7 +8,7 @@ Content-Type: application/json
 
 ###
 ## Patch firstName and lastName - expect 200
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -18,7 +18,7 @@ Content-Type: application/json
 
 ###
 ## Patch username - expect 200
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -27,7 +27,7 @@ Content-Type: application/json
 
 ###
 ## Patch password (valid) - expect 200
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -36,14 +36,14 @@ Content-Type: application/json
 
 ###
 ## Empty body, every field optional via PartialType - expect 200
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {}
 
 ###
 ## Unknown property "age" (forbidNonWhitelisted) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -52,7 +52,7 @@ Content-Type: application/json
 
 ###
 ## Unknown property "isAuth" (forbidNonWhitelisted) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -61,7 +61,7 @@ Content-Type: application/json
 
 ###
 ## Invalid email format (@IsEmail) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -70,7 +70,7 @@ Content-Type: application/json
 
 ###
 ## firstName too short, 2 chars (@MinLength(3)) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -79,7 +79,7 @@ Content-Type: application/json
 
 ###
 ## username too short, 7 chars (@MinLength(8)) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -88,7 +88,7 @@ Content-Type: application/json
 
 ###
 ## username too long, 26 chars (@MaxLength(25)) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -97,7 +97,7 @@ Content-Type: application/json
 
 ###
 ## password without special character (@Matches) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -106,7 +106,7 @@ Content-Type: application/json
 
 ###
 ## wrong type, email as number (@IsString, @IsEmail) - expect 400
-PATCH http://localhost:3000/users/123
+PATCH http://localhost:3000/users/1
 Content-Type: application/json
 
 {
@@ -114,7 +114,7 @@ Content-Type: application/json
 }
 
 ###
-## Non-numeric id is not validated because updateUser has no @Param() - expect 200
+## Non-numeric id (ParseIntPipe) - expect 400
 PATCH http://localhost:3000/users/not-a-number
 Content-Type: application/json
 

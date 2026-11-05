@@ -15,18 +15,18 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 
-import { CreateUserDto } from './dtos/createUser.dto.js';
+import { CreateUserDto } from './dtos/create-user.dto.js';
+import { GetUserParamDto } from './dtos/get-users-param.dto.js';
 
 @Controller('users')
 export class UsersController {
-  @Get('/:id')
+  @Get(['/', '/:id'])
   public getUser(
-    @Param('id', ParseIntPipe) id: number | undefined,
+    @Param() getUserParamDto: GetUserParamDto,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   ) {
-    console.log(id);
-    console.log(typeof id);
+    console.log(getUserParamDto);
     console.log(limit);
     console.log(typeof limit);
     console.log(page);

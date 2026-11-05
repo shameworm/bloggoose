@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { CreateUserDto } from './dtos/create-user.dto.js';
-import { PaginationQueryDto } from './dtos/pagination-query.dto.js';
+import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
 import type { PublicUser, User } from './interfaces/user.interface.js';
 

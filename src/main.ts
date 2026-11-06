@@ -3,11 +3,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule, ObserveInstrument } from './app.module.js';
+import { ConfigService } from '@nestjs/config';
+import { EnvironmentVariables } from './config/env.validation.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     instrument: ObserveInstrument,
   });
+  const config =
+    app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);
+  const port = config.get('PORT', { infer: true });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -17,15 +22,15 @@ async function bootstrap() {
   );
 
   // Swagger configuration
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setVersion('1.0')
     .setTitle('BlogGoose')
     .setDescription('REST API for BlogGoose users, posts and authentication')
-    .addServer(`http://localhost:${process.env.PORT ?? 3000}`)
+    .addServer(`http://localhost:${port}`)
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port);
 }
 await bootstrap();

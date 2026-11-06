@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -28,7 +28,7 @@ export class PostsController {
   }
 
   @Get(':id')
-  public findById(@Param('id', ParseIntPipe) id: number): PostEntity {
+  public findById(@Param('id', ParseUUIDPipe) id: string): PostEntity {
     return this.postsService.findById(id);
   }
 
@@ -39,7 +39,7 @@ export class PostsController {
 
   @Patch(':id')
   public update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() patchPostDto: PatchPostDto,
   ): PostEntity {
     return this.postsService.update(id, patchPostDto);
@@ -47,7 +47,7 @@ export class PostsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public remove(@Param('id', ParseIntPipe) id: number): void {
+  public remove(@Param('id', ParseUUIDPipe) id: string): void {
     this.postsService.remove(id);
   }
 }

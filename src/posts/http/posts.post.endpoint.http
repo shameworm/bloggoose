@@ -1,11 +1,12 @@
-## Users live in memory, so create user 1 first (see auth.endpoint.http)
+## Users live in memory: sign up first (auth.endpoint.http) and paste the id
+@userId = paste-user-id-here
 
 ## Create draft (publishedAt: null) - expect 201
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "title": "My First Post!",
     "content": "A post long enough to pass the thirty character minimum."
 }
@@ -16,7 +17,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "title": "My First Post!",
     "content": "A post long enough to pass the thirty character minimum.",
     "publish": true
@@ -28,7 +29,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 999,
+    "authorId": "00000000-0000-4000-8000-000000000000",
     "title": "My First Post!",
     "content": "A post long enough to pass the thirty character minimum."
 }
@@ -39,7 +40,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "content": "A post long enough to pass the thirty character minimum."
 }
 
@@ -49,7 +50,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "title": "My First Post!",
     "content": "Too short"
 }
@@ -60,7 +61,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "title": "My First Post!",
     "content": "A post long enough to pass the thirty character minimum.",
     "publish": "yes"
@@ -72,7 +73,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "authorId": "{{userId}}",
     "title": "My First Post!",
     "content": "A post long enough to pass the thirty character minimum.",
     "slug": "custom",

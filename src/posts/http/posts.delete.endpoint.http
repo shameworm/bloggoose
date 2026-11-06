@@ -1,6 +1,9 @@
+## Paste an id from a create post response (POST /posts)
+@postId = paste-post-id-here
+
 ## Delete post - expect 204 (or 404 if it doesn't exist)
-DELETE http://localhost:3000/posts/1
+DELETE http://localhost:3000/posts/{{postId}}
 
 ###
-## Non-numeric id (ParseIntPipe) - expect 400
+## id not a UUID (ParseUUIDPipe) - expect 400
 DELETE http://localhost:3000/posts/abc

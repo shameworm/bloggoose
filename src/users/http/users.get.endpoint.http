@@ -1,3 +1,6 @@
+## Paste an id from a create user response (POST /users or /auth/signup)
+@userId = paste-user-id-here
+
 ## Log in first (see auth.endpoint.http), otherwise every list request - expect 401
 
 ## Get users (default limit=10, page=1) - expect 200
@@ -13,8 +16,12 @@ GET http://localhost:3000/users?limit=500
 
 ###
 ## Get user by id - expect 200 (or 404 if it doesn't exist)
-GET http://localhost:3000/users/1
+GET http://localhost:3000/users/{{userId}}
 
 ###
-## Non-numeric id (ParseIntPipe) - expect 400
+## Unknown user id - expect 404
+GET http://localhost:3000/users/00000000-0000-4000-8000-000000000000
+
+###
+## id not a UUID (ParseUUIDPipe) - expect 400
 GET http://localhost:3000/users/abc

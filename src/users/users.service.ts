@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   ConflictException,
   Inject,
@@ -18,7 +20,6 @@ import type { PublicUser, User } from './interfaces/user.interface.js';
 @Injectable()
 export class UsersService {
   private readonly users: User[] = [];
-  private nextId = 1;
 
   constructor(
     @Inject(forwardRef(() => AuthService))
@@ -34,7 +35,7 @@ export class UsersService {
     return this.users.slice(start, start + limit).map(toPublicUser);
   }
 
-  public findById(id: number): PublicUser {
+  public findById(id: string): PublicUser {
     return toPublicUser(this.getUserOrThrow(id));
   }
 
@@ -47,13 +48,13 @@ export class UsersService {
   public create(createUserDto: CreateUserDto): PublicUser {
     this.assertUnique(createUserDto);
 
-    const user: User = Object.assign({ id: this.nextId++ }, createUserDto);
+    const user: User = Object.assign({ id: randomUUID() }, createUserDto);
     this.users.push(user);
 
     return toPublicUser(user);
   }
 
-  public update(id: number, patchUserDto: PatchUserDto): PublicUser {
+  public update(id: string, patchUserDto: PatchUserDto): PublicUser {
     const user = this.getUserOrThrow(id);
     this.assertUnique(patchUserDto, id);
 
@@ -62,12 +63,12 @@ export class UsersService {
     return toPublicUser(user);
   }
 
-  public remove(id: number): void {
+  public remove(id: string): void {
     const user = this.getUserOrThrow(id);
     this.users.splice(this.users.indexOf(user), 1);
   }
 
-  private getUserOrThrow(id: number): User {
+  private getUserOrThrow(id: string): User {
     const user = this.users.find((u) => u.id === id);
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -77,7 +78,7 @@ export class UsersService {
 
   private assertUnique(
     { email, username }: Partial<Pick<User, 'email' | 'username'>>,
-    excludeId?: number,
+    excludeId?: string,
   ): void {
     const others = this.users.filter((u) => u.id !== excludeId);
     if (email && others.some((u) => u.email === email)) {

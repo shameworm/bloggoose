@@ -5,12 +5,15 @@ import { AuthService } from '../auth/auth.service.js';
 import { UsersService } from '../users/users.service.js';
 import { PostsService } from './posts.service.js';
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 const title = 'My First Post!';
 const content = 'A post long enough to pass the thirty character minimum.';
 
 describe('PostsService', () => {
   let service: PostsService;
-  let authorId: number;
+  let authorId: string;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -29,7 +32,7 @@ describe('PostsService', () => {
     const post = service.create({ authorId, title, content });
 
     expect(post).toMatchObject({
-      id: 1,
+      id: expect.stringMatching(UUID),
       authorId,
       title,
       slug: 'my-first-post',
@@ -61,7 +64,7 @@ describe('PostsService', () => {
   it('rejects a post from an unknown author', () => {
     expect(() =>
       service.create({
-        authorId: 42,
+        authorId: '00000000-0000-0000-0000-000000000000',
         title,
         content,
       }),
@@ -69,16 +72,16 @@ describe('PostsService', () => {
   });
 
   it('paginates posts', () => {
-    for (let i = 0; i < 3; i++) {
-      service.create({ authorId, title, content });
-    }
+    const ids = [0, 1, 2].map(
+      () => service.create({ authorId, title, content }).id,
+    );
 
-    expect(service.findAll({ limit: 2, page: 1 }).map((p) => p.id)).toEqual([
-      1, 2,
-    ]);
-    expect(service.findAll({ limit: 2, page: 2 }).map((p) => p.id)).toEqual([
-      3,
-    ]);
+    expect(service.findAll({ limit: 2, page: 1 }).map((p) => p.id)).toEqual(
+      ids.slice(0, 2),
+    );
+    expect(service.findAll({ limit: 2, page: 2 }).map((p) => p.id)).toEqual(
+      ids.slice(2),
+    );
   });
 
   it('filters posts by author', () => {
@@ -87,7 +90,7 @@ describe('PostsService', () => {
     expect(service.findAll({ authorId, limit: 10, page: 1 })).toHaveLength(1);
     expect(
       service.findAll({
-        authorId: 42,
+        authorId: '00000000-0000-0000-0000-000000000000',
         limit: 10,
         page: 1,
       }),
@@ -95,7 +98,9 @@ describe('PostsService', () => {
   });
 
   it('throws NotFoundException for an unknown id', () => {
-    expect(() => service.findById(42)).toThrow(NotFoundException);
+    expect(() =>
+      service.findById('00000000-0000-0000-0000-000000000000'),
+    ).toThrow(NotFoundException);
   });
 
   it('updates fields and bumps updatedAt but keeps the slug', () => {

@@ -1,19 +1,17 @@
 import {
   IsBoolean,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
 
 export class CreatePostDto {
   // Taken from the logged-in user once auth has per-client tokens.
-  @IsInt()
-  @Min(1)
-  authorId: number;
+  @IsUUID()
+  authorId: string;
 
   @IsString()
   @IsNotEmpty()

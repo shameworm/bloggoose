@@ -1,2 +1,5 @@
+## Paste an id from a create user response (POST /users or /auth/signup)
+@userId = paste-user-id-here
+
 ## Delete user - expect 204 (or 404 if it doesn't exist)
-DELETE http://localhost:3000/users/1
+DELETE http://localhost:3000/users/{{userId}}

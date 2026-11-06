@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -28,7 +28,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  public findById(@Param('id', ParseIntPipe) id: number): PublicUser {
+  public findById(@Param('id', ParseUUIDPipe) id: string): PublicUser {
     return this.usersService.findById(id);
   }
 
@@ -39,7 +39,7 @@ export class UsersController {
 
   @Patch(':id')
   public update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() patchUserDto: PatchUserDto,
   ): PublicUser {
     return this.usersService.update(id, patchUserDto);
@@ -47,7 +47,7 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public remove(@Param('id', ParseIntPipe) id: number): void {
+  public remove(@Param('id', ParseUUIDPipe) id: string): void {
     this.usersService.remove(id);
   }
 }

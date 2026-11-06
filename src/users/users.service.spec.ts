@@ -8,6 +8,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth/auth.service.js';
 import { UsersService } from './users.service.js';
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 const john = {
   firstName: 'John',
   lastName: 'Doe',
@@ -33,7 +36,7 @@ describe('UsersService', () => {
     const user = service.create(john);
 
     expect(user).toEqual({
-      id: 1,
+      id: expect.stringMatching(UUID),
       firstName: 'John',
       lastName: 'Doe',
       email: 'johndoe@example.com',
@@ -61,24 +64,27 @@ describe('UsersService', () => {
 
   it('paginates users', () => {
     authService.isAuth = true;
-    for (let i = 0; i < 3; i++) {
-      service.create({
-        ...john,
-        email: `user${i}@example.com`,
-        username: `username${i}`,
-      });
-    }
+    const ids = [0, 1, 2].map(
+      (i) =>
+        service.create({
+          ...john,
+          email: `user${i}@example.com`,
+          username: `username${i}`,
+        }).id,
+    );
 
-    expect(service.findAll({ limit: 2, page: 1 }).map((u) => u.id)).toEqual([
-      1, 2,
-    ]);
-    expect(service.findAll({ limit: 2, page: 2 }).map((u) => u.id)).toEqual([
-      3,
-    ]);
+    expect(service.findAll({ limit: 2, page: 1 }).map((u) => u.id)).toEqual(
+      ids.slice(0, 2),
+    );
+    expect(service.findAll({ limit: 2, page: 2 }).map((u) => u.id)).toEqual(
+      ids.slice(2),
+    );
   });
 
   it('throws NotFoundException for an unknown id', () => {
-    expect(() => service.findById(42)).toThrow(NotFoundException);
+    expect(() =>
+      service.findById('00000000-0000-0000-0000-000000000000'),
+    ).toThrow(NotFoundException);
   });
 
   it('updates only the given fields', () => {

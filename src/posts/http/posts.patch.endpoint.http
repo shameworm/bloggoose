@@ -1,5 +1,8 @@
+## Paste an id from a create post response (POST /posts)
+@postId = paste-post-id-here
+
 ## Patch title (slug stays the same) - expect 200
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
@@ -8,7 +11,7 @@ Content-Type: application/json
 
 ###
 ## Patch content - expect 200
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
@@ -17,7 +20,7 @@ Content-Type: application/json
 
 ###
 ## Publish - expect 200, publishedAt set
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
@@ -26,7 +29,7 @@ Content-Type: application/json
 
 ###
 ## Unpublish - expect 200, publishedAt null
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
@@ -35,23 +38,23 @@ Content-Type: application/json
 
 ###
 ## Empty body, every field optional via PartialType - expect 200
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {}
 
 ###
 ## Changing the author (omitted from PatchPostDto) - expect 400
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
-    "authorId": 2
+    "authorId": "00000000-0000-4000-8000-000000000000"
 }
 
 ###
 ## content too short (@MinLength(30)) - expect 400
-PATCH http://localhost:3000/posts/1
+PATCH http://localhost:3000/posts/{{postId}}
 Content-Type: application/json
 
 {
@@ -60,7 +63,7 @@ Content-Type: application/json
 
 ###
 ## Unknown post id - expect 404
-PATCH http://localhost:3000/posts/999
+PATCH http://localhost:3000/posts/00000000-0000-4000-8000-000000000000
 Content-Type: application/json
 
 {
@@ -68,7 +71,7 @@ Content-Type: application/json
 }
 
 ###
-## Non-numeric id (ParseIntPipe) - expect 400
+## id not a UUID (ParseUUIDPipe) - expect 400
 PATCH http://localhost:3000/posts/abc
 Content-Type: application/json
 

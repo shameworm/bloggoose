@@ -1,3 +1,9 @@
+## Paste an id from a create user response (POST /users or /auth/signup)
+@userId = paste-user-id-here
+
+## Paste an id from a create post response (POST /posts)
+@postId = paste-post-id-here
+
 ## Get posts (default limit=10, page=1) - expect 200
 GET http://localhost:3000/posts
 
@@ -7,14 +13,14 @@ GET http://localhost:3000/posts?limit=5&page=1
 
 ###
 ## Filter by author - expect 200 ([] if the author has no posts)
-GET http://localhost:3000/posts?authorId=1
+GET http://localhost:3000/posts?authorId={{userId}}
 
 ###
 ## Filter by author with pagination - expect 200
-GET http://localhost:3000/posts?authorId=1&limit=5&page=2
+GET http://localhost:3000/posts?authorId={{userId}}&limit=5&page=2
 
 ###
-## Non-numeric authorId (@IsInt) - expect 400
+## authorId not a UUID (@IsUUID) - expect 400
 GET http://localhost:3000/posts?authorId=abc
 
 ###
@@ -23,12 +29,12 @@ GET http://localhost:3000/posts?limit=500
 
 ###
 ## Get post by id - expect 200 (or 404 if it doesn't exist)
-GET http://localhost:3000/posts/1
+GET http://localhost:3000/posts/{{postId}}
 
 ###
 ## Unknown post id - expect 404
-GET http://localhost:3000/posts/999
+GET http://localhost:3000/posts/00000000-0000-4000-8000-000000000000
 
 ###
-## Non-numeric id (ParseIntPipe) - expect 400
+## id not a UUID (ParseUUIDPipe) - expect 400
 GET http://localhost:3000/posts/abc

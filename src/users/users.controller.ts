@@ -15,7 +15,7 @@ import {
 import { CreateUserDto } from './dtos/create-user.dto.js';
 import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
-import type { PublicUser } from './interfaces/user.interface.js';
+import type { PublicUser } from './entities/user.entity.js';
 import { UsersService } from './users.service.js';
 
 @Controller('users')
@@ -23,17 +23,19 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  public findAll(@Query() paginationQuery: PaginationQueryDto): PublicUser[] {
+  public findAll(
+    @Query() paginationQuery: PaginationQueryDto,
+  ): Promise<PublicUser[]> {
     return this.usersService.findAll(paginationQuery);
   }
 
   @Get(':id')
-  public findById(@Param('id', ParseUUIDPipe) id: string): PublicUser {
+  public findById(@Param('id', ParseUUIDPipe) id: string): Promise<PublicUser> {
     return this.usersService.findById(id);
   }
 
   @Post()
-  public create(@Body() createUserDto: CreateUserDto): PublicUser {
+  public create(@Body() createUserDto: CreateUserDto): Promise<PublicUser> {
     return this.usersService.create(createUserDto);
   }
 
@@ -41,13 +43,13 @@ export class UsersController {
   public update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() patchUserDto: PatchUserDto,
-  ): PublicUser {
+  ): Promise<PublicUser> {
     return this.usersService.update(id, patchUserDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public remove(@Param('id', ParseUUIDPipe) id: string): void {
-    this.usersService.remove(id);
+  public remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.usersService.remove(id);
   }
 }

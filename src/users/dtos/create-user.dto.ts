@@ -27,6 +27,9 @@ export class CreateUserDto {
   @IsString()
   @MinLength(8)
   @MaxLength(25)
+  // Login accepts an email or a username, so a username must never look
+  // like an email.
+  @Matches(/^[^@]+$/, { message: 'Username must not contain @' })
   username: string;
 
   @IsString()

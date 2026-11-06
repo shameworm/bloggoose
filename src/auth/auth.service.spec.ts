@@ -4,10 +4,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
 
-const credentials = {
-  email: 'johndoe@example.com',
-  password: 'Veryoriginal1!',
-};
+const email = 'johndoe@example.com';
+const username = 'makarena';
+const password = 'Veryoriginal1!';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -18,32 +17,41 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    service.signup({ ...credentials, username: 'makarena' });
+    service.signup({ email, username, password });
   });
 
-  it('logs in with the right credentials without exposing the password', () => {
-    const user = service.login(credentials);
+  it('logs in with an email without exposing the password', () => {
+    const user = service.login({ login: email, password });
 
-    expect(user.email).toBe(credentials.email);
+    expect(user.email).toBe(email);
     expect(user).not.toHaveProperty('password');
     expect(service.isAuth).toBe(true);
   });
 
+  it('logs in with a username', () => {
+    expect(service.login({ login: username, password }).username).toBe(
+      username,
+    );
+  });
+
   it('rejects a wrong password', () => {
     expect(() =>
-      service.login({ ...credentials, password: 'Wrongpassword1!' }),
+      service.login({ login: email, password: 'Wrongpassword1!' }),
     ).toThrow(UnauthorizedException);
     expect(service.isAuth).toBe(false);
   });
 
-  it('rejects an unknown email with the same error', () => {
+  it('rejects an unknown login with the same error', () => {
     expect(() =>
-      service.login({ ...credentials, email: 'nobody@example.com' }),
-    ).toThrow('Invalid email or password');
+      service.login({ login: 'nobody@example.com', password }),
+    ).toThrow('Invalid login or password');
+    expect(() => service.login({ login: 'nobodyatall', password })).toThrow(
+      'Invalid login or password',
+    );
   });
 
   it('logs out', () => {
-    service.login(credentials);
+    service.login({ login: email, password });
 
     service.logout();
 

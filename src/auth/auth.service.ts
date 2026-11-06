@@ -22,13 +22,13 @@ export class AuthService {
     private readonly usersService: ForwardRef<UsersService>,
   ) {}
 
-  public login({ email, password }: LoginDto): PublicUser {
-    const user = this.usersService.findByEmail(email);
+  public login({ login, password }: LoginDto): PublicUser {
+    const user = this.usersService.findByLogin(login);
 
-    // Same error for an unknown email and a wrong password, so the response
-    // doesn't reveal which emails are registered.
+    // Same error for an unknown login and a wrong password, so the response
+    // doesn't reveal which emails or usernames are registered.
     if (!user || user.password !== password) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid login or password');
     }
 
     this.isAuth = true;

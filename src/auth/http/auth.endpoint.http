@@ -13,12 +13,22 @@ Content-Type: application/json
 GET http://localhost:3000/users
 
 ###
-## Log in - expect 200
+## Log in with email - expect 200
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "email": "johndoe@example.com",
+    "login": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Log in with username - expect 200
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "login": "makarena",
     "password": "Veryoriginal1!"
 }
 
@@ -27,12 +37,12 @@ Content-Type: application/json
 GET http://localhost:3000/users
 
 ###
-## Wrong password - expect 401 "Invalid email or password"
+## Wrong password - expect 401 "Invalid login or password"
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "email": "johndoe@example.com",
+    "login": "johndoe@example.com",
     "password": "Wrongpassword1!"
 }
 
@@ -42,17 +52,38 @@ POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "email": "nobody@example.com",
+    "login": "nobody@example.com",
     "password": "Veryoriginal1!"
 }
 
 ###
-## Invalid email format (@IsEmail) - expect 400
+## Unknown username - expect 401 with the same message
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "email": "johndoe-at-example",
+    "login": "nobodyatall",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Empty login (@IsNotEmpty) - expect 400
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "login": "",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Username containing @ on signup - expect 400
+POST http://localhost:3000/auth/signup
+Content-Type: application/json
+
+{
+    "username": "john@example.com",
+    "email": "other@example.com",
     "password": "Veryoriginal1!"
 }
 

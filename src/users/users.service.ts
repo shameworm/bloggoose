@@ -40,8 +40,8 @@ export class UsersService {
 
   // Returns the full user, password included. Only for internal checks like
   // login; never send the result to a client.
-  public findByEmail(email: string): User | undefined {
-    return this.users.find((u) => u.email === email);
+  public findByLogin(login: string): User | undefined {
+    return this.users.find((u) => u.email === login || u.username === login);
   }
 
   public create(createUserDto: CreateUserDto): PublicUser {

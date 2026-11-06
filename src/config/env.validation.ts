@@ -26,6 +26,26 @@ export class EnvironmentVariables {
   @IsInt()
   @IsNotEmpty()
   PORT: number = 3000;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_HOST: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_USERNAME: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_NAME: string;
+
+  @IsInt()
+  @IsNotEmpty()
+  DB_PORT: number;
 }
 
 export function validate(config: Record<string, unknown>) {

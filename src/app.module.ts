@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { EnvironmentVariables, validate } from './config/env.validation.js';
@@ -25,6 +26,19 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UsersModule,
     PostsModule,
     AuthModule,
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<EnvironmentVariables, true>) => ({
+        type: 'postgres',
+        host: config.get('DB_HOST', { infer: true }),
+        port: config.get('DB_PORT', { infer: true }),
+        username: config.get('DB_USERNAME', { infer: true }),
+        password: config.get('DB_PASSWORD', { infer: true }),
+        database: config.get('DB_NAME', { infer: true }),
+        autoLoadEntities: true,
+        synchronize: config.get('NODE_ENV', { infer: true }) !== 'production',
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

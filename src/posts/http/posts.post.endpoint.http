@@ -5,17 +5,17 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "userId": 1,
     "text": "A post long enough to pass the thirty character minimum."
 }
 
 ###
-## Unknown author - expect 404
+## Unknown user - expect 404
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 999,
+    "userId": 999,
     "text": "A post long enough to pass the thirty character minimum."
 }
 
@@ -25,17 +25,17 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": 1,
+    "userId": 1,
     "text": "Too short"
 }
 
 ###
-## authorId as string (@IsInt) - expect 400
+## userId as string (@IsInt) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "authorId": "1",
+    "userId": "1",
     "text": "A post long enough to pass the thirty character minimum."
 }
 
@@ -46,7 +46,7 @@ Content-Type: application/json
 
 {
     "id": 5,
-    "authorId": 1,
+    "userId": 1,
     "text": "A post long enough to pass the thirty character minimum."
 }
 

@@ -23,13 +23,20 @@ export class PostsService {
     return this.getPostOrThrow(id);
   }
 
-  public create({ authorId, text }: CreatePostDto): Post {
-    // Throws NotFoundException if the author doesn't exist.
-    this.usersService.findById(authorId);
+  public findByUserId(userId: number): Post[] {
+    // Throws NotFoundException if the user doesn't exist.
+    this.usersService.findById(userId);
+
+    return this.posts.filter((p) => p.userId === userId);
+  }
+
+  public create({ userId, text }: CreatePostDto): Post {
+    // Throws NotFoundException if the user doesn't exist.
+    this.usersService.findById(userId);
 
     const post: Post = {
       id: this.nextId++,
-      authorId,
+      userId,
       text,
       dateOfPublication: new Date(),
     };

@@ -8,7 +8,7 @@ const text = 'A post long enough to pass the thirty character minimum.';
 
 describe('PostsService', () => {
   let service: PostsService;
-  let authorId: number;
+  let userId: number;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -16,7 +16,7 @@ describe('PostsService', () => {
     }).compile();
 
     service = module.get<PostsService>(PostsService);
-    ({ id: authorId } = module.get<UsersService>(UsersService).create({
+    ({ id: userId } = module.get<UsersService>(UsersService).create({
       email: 'johndoe@example.com',
       username: 'makarena',
       password: 'Veryoriginal1!',
@@ -24,21 +24,21 @@ describe('PostsService', () => {
   });
 
   it('creates a post with a generated id and publication date', () => {
-    const post = service.create({ authorId, text });
+    const post = service.create({ userId, text });
 
-    expect(post).toMatchObject({ id: 1, authorId, text });
+    expect(post).toMatchObject({ id: 1, userId, text });
     expect(post.dateOfPublication).toBeInstanceOf(Date);
   });
 
-  it('rejects a post from an unknown author', () => {
-    expect(() => service.create({ authorId: 42, text })).toThrow(
+  it('rejects a post from an unknown user', () => {
+    expect(() => service.create({ userId: 42, text })).toThrow(
       NotFoundException,
     );
   });
 
   it('paginates posts', () => {
     for (let i = 0; i < 3; i++) {
-      service.create({ authorId, text });
+      service.create({ userId, text });
     }
 
     expect(service.findAll({ limit: 2, page: 1 }).map((p) => p.id)).toEqual([
@@ -49,19 +49,34 @@ describe('PostsService', () => {
     ]);
   });
 
+  it('finds posts by user id', () => {
+    service.create({ userId, text });
+    service.create({ userId, text });
+
+    expect(service.findByUserId(userId).map((p) => p.id)).toEqual([1, 2]);
+  });
+
+  it('returns an empty list for a user without posts', () => {
+    expect(service.findByUserId(userId)).toEqual([]);
+  });
+
+  it('throws NotFoundException when finding posts of an unknown user', () => {
+    expect(() => service.findByUserId(42)).toThrow(NotFoundException);
+  });
+
   it('throws NotFoundException for an unknown id', () => {
     expect(() => service.findById(42)).toThrow(NotFoundException);
   });
 
   it('updates the text', () => {
-    const { id } = service.create({ authorId, text });
+    const { id } = service.create({ userId, text });
     const newText = 'An edited post that is still over thirty characters.';
 
     expect(service.update(id, { text: newText }).text).toBe(newText);
   });
 
   it('removes a post', () => {
-    const { id } = service.create({ authorId, text });
+    const { id } = service.create({ userId, text });
 
     service.remove(id);
 

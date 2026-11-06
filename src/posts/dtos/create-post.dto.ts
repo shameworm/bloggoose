@@ -3,7 +3,7 @@ import { IsInt, IsString, Min, MinLength } from 'class-validator';
 export class CreatePostDto {
   @IsInt()
   @Min(1)
-  authorId: number;
+  userId: number;
 
   @IsString()
   @MinLength(30)

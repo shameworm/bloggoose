@@ -27,6 +27,13 @@ export class PostsController {
     return this.postsService.findAll(paginationQuery);
   }
 
+  @Get('user/:userId')
+  public findByUserId(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): PostEntity[] {
+    return this.postsService.findByUserId(userId);
+  }
+
   @Get(':id')
   public findById(@Param('id', ParseIntPipe) id: number): PostEntity {
     return this.postsService.findById(id);

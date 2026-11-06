@@ -20,3 +20,15 @@ GET http://localhost:3000/posts/999
 ###
 ## Non-numeric id (ParseIntPipe) - expect 400
 GET http://localhost:3000/posts/abc
+
+###
+## Get posts by user id - expect 200 ([] if the user has no posts)
+GET http://localhost:3000/posts/user/1
+
+###
+## Posts of an unknown user - expect 404
+GET http://localhost:3000/posts/user/999
+
+###
+## Non-numeric user id (ParseIntPipe) - expect 400
+GET http://localhost:3000/posts/user/abc

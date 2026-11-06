@@ -14,12 +14,12 @@ Content-Type: application/json
 {}
 
 ###
-## Changing the author (omitted from PatchPostDto) - expect 400
+## Changing the user (omitted from PatchPostDto) - expect 400
 PATCH http://localhost:3000/posts/1
 Content-Type: application/json
 
 {
-    "authorId": 2
+    "userId": 2
 }
 
 ###

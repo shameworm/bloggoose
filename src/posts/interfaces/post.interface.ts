@@ -1,6 +1,6 @@
 export interface Post {
   id: number;
-  authorId: number;
+  userId: number;
   text: string;
   dateOfPublication: Date;
 }

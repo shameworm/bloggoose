@@ -1,0 +1,61 @@
+## Sign up - expect 201
+POST http://localhost:3000/auth/signup
+Content-Type: application/json
+
+{
+    "username": "makarena",
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Get users before login - expect 401
+GET http://localhost:3000/users
+
+###
+## Log in - expect 200
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "johndoe@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Get users after login - expect 200
+GET http://localhost:3000/users
+
+###
+## Wrong password - expect 401 "Invalid email or password"
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "johndoe@example.com",
+    "password": "Wrongpassword1!"
+}
+
+###
+## Unknown email - expect 401 with the same message
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "nobody@example.com",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Invalid email format (@IsEmail) - expect 400
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "johndoe-at-example",
+    "password": "Veryoriginal1!"
+}
+
+###
+## Log out - expect 204
+POST http://localhost:3000/auth/logout

@@ -12,9 +12,9 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { CreatePostDto } from './dtos/create-post.dto.js';
 import { PatchPostDto } from './dtos/patch-post.dto.js';
+import { PostsQueryDto } from './dtos/posts-query.dto.js';
 import type { Post as PostEntity } from './interfaces/post.interface.js';
 import { PostsService } from './posts.service.js';
 
@@ -23,15 +23,8 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  public findAll(@Query() paginationQuery: PaginationQueryDto): PostEntity[] {
-    return this.postsService.findAll(paginationQuery);
-  }
-
-  @Get('user/:userId')
-  public findByUserId(
-    @Param('userId', ParseIntPipe) userId: number,
-  ): PostEntity[] {
-    return this.postsService.findByUserId(userId);
+  public findAll(@Query() postsQuery: PostsQueryDto): PostEntity[] {
+    return this.postsService.findAll(postsQuery);
   }
 
   @Get(':id')

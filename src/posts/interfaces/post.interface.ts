@@ -1,6 +1,10 @@
 export interface Post {
   id: number;
-  userId: number;
-  text: string;
-  dateOfPublication: Date;
+  authorId: number;
+  title: string;
+  slug: string;
+  content: string;
+  publishedAt: Date | null; // null = draft
+  createdAt: Date;
+  updatedAt: Date;
 }

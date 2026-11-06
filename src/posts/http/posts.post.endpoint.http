@@ -1,53 +1,82 @@
-## Users live in memory, so create user 1 first (see users.post.endpoint.http)
+## Users live in memory, so create user 1 first (see auth.endpoint.http)
 
-## Create post (valid) - expect 201
+## Create draft (publishedAt: null) - expect 201
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "userId": 1,
-    "text": "A post long enough to pass the thirty character minimum."
+    "authorId": 1,
+    "title": "My First Post!",
+    "content": "A post long enough to pass the thirty character minimum."
 }
 
 ###
-## Unknown user - expect 404
+## Create and publish - expect 201, slug "my-first-post-2" if the title is taken
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "userId": 999,
-    "text": "A post long enough to pass the thirty character minimum."
+    "authorId": 1,
+    "title": "My First Post!",
+    "content": "A post long enough to pass the thirty character minimum.",
+    "publish": true
 }
 
 ###
-## text too short, under 30 chars (@MinLength(30)) - expect 400
+## Unknown author - expect 404
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "userId": 1,
-    "text": "Too short"
+    "authorId": 999,
+    "title": "My First Post!",
+    "content": "A post long enough to pass the thirty character minimum."
 }
 
 ###
-## userId as string (@IsInt) - expect 400
+## Missing title (@IsNotEmpty) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "userId": "1",
-    "text": "A post long enough to pass the thirty character minimum."
+    "authorId": 1,
+    "content": "A post long enough to pass the thirty character minimum."
 }
 
 ###
-## Client-sent id (forbidNonWhitelisted) - expect 400
+## content too short, under 30 chars (@MinLength(30)) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-    "id": 5,
-    "userId": 1,
-    "text": "A post long enough to pass the thirty character minimum."
+    "authorId": 1,
+    "title": "My First Post!",
+    "content": "Too short"
+}
+
+###
+## publish as string (@IsBoolean) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": 1,
+    "title": "My First Post!",
+    "content": "A post long enough to pass the thirty character minimum.",
+    "publish": "yes"
+}
+
+###
+## Server-owned fields (forbidNonWhitelisted) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": 1,
+    "title": "My First Post!",
+    "content": "A post long enough to pass the thirty character minimum.",
+    "slug": "custom",
+    "publishedAt": "2020-01-01T00:00:00.000Z"
 }
 
 ###

@@ -6,6 +6,18 @@ GET http://localhost:3000/posts
 GET http://localhost:3000/posts?limit=5&page=1
 
 ###
+## Filter by author - expect 200 ([] if the author has no posts)
+GET http://localhost:3000/posts?authorId=1
+
+###
+## Filter by author with pagination - expect 200
+GET http://localhost:3000/posts?authorId=1&limit=5&page=2
+
+###
+## Non-numeric authorId (@IsInt) - expect 400
+GET http://localhost:3000/posts?authorId=abc
+
+###
 ## limit above 100 (@Max(100)) - expect 400
 GET http://localhost:3000/posts?limit=500
 
@@ -20,15 +32,3 @@ GET http://localhost:3000/posts/999
 ###
 ## Non-numeric id (ParseIntPipe) - expect 400
 GET http://localhost:3000/posts/abc
-
-###
-## Get posts by user id - expect 200 ([] if the user has no posts)
-GET http://localhost:3000/posts/user/1
-
-###
-## Posts of an unknown user - expect 404
-GET http://localhost:3000/posts/user/999
-
-###
-## Non-numeric user id (ParseIntPipe) - expect 400
-GET http://localhost:3000/posts/user/abc

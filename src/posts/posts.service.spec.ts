@@ -5,11 +5,12 @@ import { AuthService } from '../auth/auth.service.js';
 import { UsersService } from '../users/users.service.js';
 import { PostsService } from './posts.service.js';
 
-const text = 'A post long enough to pass the thirty character minimum.';
+const title = 'My First Post!';
+const content = 'A post long enough to pass the thirty character minimum.';
 
 describe('PostsService', () => {
   let service: PostsService;
-  let userId: number;
+  let authorId: number;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,29 +18,59 @@ describe('PostsService', () => {
     }).compile();
 
     service = module.get<PostsService>(PostsService);
-    ({ id: userId } = module.get<UsersService>(UsersService).create({
+    ({ id: authorId } = module.get<UsersService>(UsersService).create({
       email: 'johndoe@example.com',
       username: 'makarena',
       password: 'Veryoriginal1!',
     }));
   });
 
-  it('creates a post with a generated id and publication date', () => {
-    const post = service.create({ userId, text });
+  it('creates a draft with server-set fields', () => {
+    const post = service.create({ authorId, title, content });
 
-    expect(post).toMatchObject({ id: 1, userId, text });
-    expect(post.dateOfPublication).toBeInstanceOf(Date);
+    expect(post).toMatchObject({
+      id: 1,
+      authorId,
+      title,
+      slug: 'my-first-post',
+      content,
+      publishedAt: null,
+    });
+    expect(post.createdAt).toBeInstanceOf(Date);
+    expect(post.updatedAt).toEqual(post.createdAt);
   });
 
-  it('rejects a post from an unknown user', () => {
-    expect(() => service.create({ userId: 42, text })).toThrow(
-      NotFoundException,
+  it('publishes on create when asked', () => {
+    const post = service.create({ authorId, title, content, publish: true });
+
+    expect(post.publishedAt).toEqual(post.createdAt);
+  });
+
+  it('makes slugs unique and keeps non-latin letters', () => {
+    expect(service.create({ authorId, title, content }).slug).toBe(
+      'my-first-post',
     );
+    expect(service.create({ authorId, title, content }).slug).toBe(
+      'my-first-post-2',
+    );
+    expect(
+      service.create({ authorId, title: 'Привіт, світ', content }).slug,
+    ).toBe('привіт-світ');
+  });
+
+  it('rejects a post from an unknown author', () => {
+    expect(() =>
+      service.create({
+        authorId: 42,
+        title,
+        content,
+      }),
+    ).toThrow(NotFoundException);
   });
 
   it('paginates posts', () => {
     for (let i = 0; i < 3; i++) {
-      service.create({ userId, text });
+      service.create({ authorId, title, content });
     }
 
     expect(service.findAll({ limit: 2, page: 1 }).map((p) => p.id)).toEqual([
@@ -50,34 +81,52 @@ describe('PostsService', () => {
     ]);
   });
 
-  it('finds posts by user id', () => {
-    service.create({ userId, text });
-    service.create({ userId, text });
+  it('filters posts by author', () => {
+    service.create({ authorId, title, content });
 
-    expect(service.findByUserId(userId).map((p) => p.id)).toEqual([1, 2]);
-  });
-
-  it('returns an empty list for a user without posts', () => {
-    expect(service.findByUserId(userId)).toEqual([]);
-  });
-
-  it('throws NotFoundException when finding posts of an unknown user', () => {
-    expect(() => service.findByUserId(42)).toThrow(NotFoundException);
+    expect(service.findAll({ authorId, limit: 10, page: 1 })).toHaveLength(1);
+    expect(
+      service.findAll({
+        authorId: 42,
+        limit: 10,
+        page: 1,
+      }),
+    ).toEqual([]);
   });
 
   it('throws NotFoundException for an unknown id', () => {
     expect(() => service.findById(42)).toThrow(NotFoundException);
   });
 
-  it('updates the text', () => {
-    const { id } = service.create({ userId, text });
-    const newText = 'An edited post that is still over thirty characters.';
+  it('updates fields and bumps updatedAt but keeps the slug', () => {
+    const post = service.create({ authorId, title, content });
+    const createdAt = post.createdAt;
+    post.updatedAt = new Date(0);
 
-    expect(service.update(id, { text: newText }).text).toBe(newText);
+    const updated = service.update(post.id, { title: 'A new title' });
+
+    expect(updated.title).toBe('A new title');
+    expect(updated.slug).toBe('my-first-post');
+    expect(updated.createdAt).toBe(createdAt);
+    expect(updated.updatedAt.getTime()).toBeGreaterThan(0);
+  });
+
+  it('publishes and unpublishes', () => {
+    const { id } = service.create({ authorId, title, content });
+
+    const published = service.update(id, { publish: true });
+    expect(published.publishedAt).toBeInstanceOf(Date);
+
+    const firstPublishedAt = published.publishedAt;
+    expect(service.update(id, { publish: true }).publishedAt).toBe(
+      firstPublishedAt,
+    );
+
+    expect(service.update(id, { publish: false }).publishedAt).toBeNull();
   });
 
   it('removes a post', () => {
-    const { id } = service.create({ userId, text });
+    const { id } = service.create({ authorId, title, content });
 
     service.remove(id);
 

@@ -1,9 +1,36 @@
-## Patch text - expect 200
+## Patch title (slug stays the same) - expect 200
 PATCH http://localhost:3000/posts/1
 Content-Type: application/json
 
 {
-    "text": "An edited post that is still over thirty characters."
+    "title": "A New Title"
+}
+
+###
+## Patch content - expect 200
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "content": "An edited post that is still over thirty characters."
+}
+
+###
+## Publish - expect 200, publishedAt set
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "publish": true
+}
+
+###
+## Unpublish - expect 200, publishedAt null
+PATCH http://localhost:3000/posts/1
+Content-Type: application/json
+
+{
+    "publish": false
 }
 
 ###
@@ -14,21 +41,21 @@ Content-Type: application/json
 {}
 
 ###
-## Changing the user (omitted from PatchPostDto) - expect 400
+## Changing the author (omitted from PatchPostDto) - expect 400
 PATCH http://localhost:3000/posts/1
 Content-Type: application/json
 
 {
-    "userId": 2
+    "authorId": 2
 }
 
 ###
-## text too short (@MinLength(30)) - expect 400
+## content too short (@MinLength(30)) - expect 400
 PATCH http://localhost:3000/posts/1
 Content-Type: application/json
 
 {
-    "text": "Too short"
+    "content": "Too short"
 }
 
 ###
@@ -37,7 +64,7 @@ PATCH http://localhost:3000/posts/999
 Content-Type: application/json
 
 {
-    "text": "An edited post that is still over thirty characters."
+    "title": "A New Title"
 }
 
 ###
@@ -46,5 +73,5 @@ PATCH http://localhost:3000/posts/abc
 Content-Type: application/json
 
 {
-    "text": "An edited post that is still over thirty characters."
+    "title": "A New Title"
 }

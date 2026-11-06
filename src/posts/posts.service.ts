@@ -29,7 +29,13 @@ export class PostsService {
     return this.getPostOrThrow(id);
   }
 
-  public create({ authorId, title, content, publish }: CreatePostDto): Post {
+  public create({
+    authorId,
+    title,
+    content,
+    featuredImageUrl,
+    publish,
+  }: CreatePostDto): Post {
     // Throws NotFoundException if the author doesn't exist.
     this.usersService.findById(authorId);
 
@@ -40,6 +46,7 @@ export class PostsService {
       title,
       slug: this.uniqueSlug(title),
       content,
+      featuredImageUrl: featuredImageUrl ?? null,
       publishedAt: publish ? now : null,
       createdAt: now,
       updatedAt: now,

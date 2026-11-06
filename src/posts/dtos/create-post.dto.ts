@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   MaxLength,
   MinLength,
@@ -22,6 +23,10 @@ export class CreatePostDto {
   @MinLength(30)
   @MaxLength(50_000)
   content: string;
+
+  @IsOptional()
+  @IsUrl()
+  featuredImageUrl?: string;
 
   // The server sets publishedAt; the client only decides whether to publish.
   @IsOptional()

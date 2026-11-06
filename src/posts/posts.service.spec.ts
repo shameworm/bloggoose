@@ -37,6 +37,7 @@ describe('PostsService', () => {
       title,
       slug: 'my-first-post',
       content,
+      featuredImageUrl: null,
       publishedAt: null,
     });
     expect(post.createdAt).toBeInstanceOf(Date);

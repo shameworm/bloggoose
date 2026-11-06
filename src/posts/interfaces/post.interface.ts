@@ -4,6 +4,7 @@ export interface Post {
   title: string;
   slug: string;
   content: string;
+  featuredImageUrl: string | null;
   publishedAt: Date | null; // null = draft
   createdAt: Date;
   updatedAt: Date;

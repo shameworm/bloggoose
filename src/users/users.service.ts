@@ -1,9 +1,14 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
+  forwardRef,
 } from '@nestjs/common';
 
+import type { ForwardRef } from '../common/types/forward-ref.type.js';
+import { AuthService } from '../auth/auth.service.js';
 import { CreateUserDto } from './dtos/create-user.dto.js';
 import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
@@ -15,13 +20,28 @@ export class UsersService {
   private readonly users: User[] = [];
   private nextId = 1;
 
+  constructor(
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: ForwardRef<AuthService>,
+  ) {}
+
   public findAll({ limit, page }: PaginationQueryDto): PublicUser[] {
+    if (!this.authService.isAuth) {
+      throw new UnauthorizedException('You are not logged in');
+    }
+
     const start = (page - 1) * limit;
     return this.users.slice(start, start + limit).map(toPublicUser);
   }
 
   public findById(id: number): PublicUser {
     return toPublicUser(this.getUserOrThrow(id));
+  }
+
+  // Returns the full user, password included. Only for internal checks like
+  // login; never send the result to a client.
+  public findByEmail(email: string): User | undefined {
+    return this.users.find((u) => u.email === email);
   }
 
   public create(createUserDto: CreateUserDto): PublicUser {

@@ -1,6 +1,11 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { AuthService } from '../auth/auth.service.js';
 import { UsersService } from './users.service.js';
 
 const john = {
@@ -13,13 +18,15 @@ const john = {
 
 describe('UsersService', () => {
   let service: UsersService;
+  let authService: AuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
+      providers: [UsersService, AuthService],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
+    authService = module.get<AuthService>(AuthService);
   });
 
   it('creates a user without exposing the password', () => {
@@ -46,7 +53,14 @@ describe('UsersService', () => {
     ).toThrow(ConflictException);
   });
 
+  it('rejects listing users when not logged in', () => {
+    expect(() => service.findAll({ limit: 10, page: 1 })).toThrow(
+      UnauthorizedException,
+    );
+  });
+
   it('paginates users', () => {
+    authService.isAuth = true;
     for (let i = 0; i < 3; i++) {
       service.create({
         ...john,

@@ -1,126 +1,140 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BlogGoose
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A REST API for a small blog: users, posts and authentication. Built with [NestJS](https://nestjs.com) and PostgreSQL as a learning project.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- **NestJS 12** on Express, TypeScript, ES modules
+- **PostgreSQL** with **TypeORM**
+- **class-validator** for request and environment validation
+- **Swagger** API docs
+- **Vitest** for tests, **oxlint** for linting, **Prettier** for formatting
+- **NestJS Observe** for tracing, logs and error tracking
+- **Bun** as the package manager
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Getting started
 
-## Project setup
+You need [Bun](https://bun.sh), a recent Node.js and a running PostgreSQL server.
 
 ```bash
-$ bun install
+# 1. Install dependencies
+bun install
+
+# 2. Create the database
+createdb bloggoose
+
+# 3. Configure the environment
+cp .env.example .env   # then edit .env
+
+# 4. Start in watch mode
+bun run start:dev
 ```
 
-## Compile and run the project
+The API runs on `http://localhost:3000` and the Swagger docs on [`http://localhost:3000/api`](http://localhost:3000/api).
 
-```bash
-# development
-$ bun run start
+In development TypeORM creates and updates the tables from the entities automatically (`synchronize`). It is turned off when `NODE_ENV=production`.
 
-# watch mode
-$ bun run start:dev
+## Environment variables
 
-# production mode
-$ bun run start:prod
+All variables are checked on startup by [`src/config/env.validation.ts`](src/config/env.validation.ts). If one is missing or invalid, the app stops with an error that names it. See [`.env.example`](.env.example) for a template.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `NODE_ENV` | no | `development` | `development`, `production` or `test` |
+| `PORT` | no | `3000` | HTTP port |
+| `OBSERVE_APP_KEY` | yes | | NestJS Observe app key |
+| `OBSERVE_APP_SECRET` | yes | | NestJS Observe app secret |
+| `OBSERVE_APP_SERVICE_ID` | yes | | Service name shown in Observe |
+| `DB_HOST` | yes | | PostgreSQL host |
+| `DB_PORT` | yes | | PostgreSQL port, usually `5432` |
+| `DB_USERNAME` | yes | | PostgreSQL user |
+| `DB_PASSWORD` | yes | | PostgreSQL password |
+| `DB_NAME` | yes | | Database name |
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `bun run start:dev` | Start in watch mode |
+| `bun run start` | Start once |
+| `bun run start:debug` | Start in watch mode with the debugger |
+| `bun run build` | Compile to `dist/` |
+| `bun run start:prod` | Run the compiled app |
+| `bun run test` | Unit tests |
+| `bun run test:watch` | Unit tests in watch mode |
+| `bun run test:cov` | Unit tests with coverage |
+| `bun run test:e2e` | End-to-end tests |
+| `bun run lint` | Lint with oxlint |
+| `bun run format` | Format with Prettier |
+
+## API
+
+Full request and response schemas are in Swagger at `/api`. All ids are UUIDs.
+
+### Auth
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/auth/signup` | Create an account |
+| `POST` | `/auth/login` | Log in with email **or** username and password |
+| `POST` | `/auth/logout` | Log out |
+
+### Users
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/users?limit=&page=` | List users, paginated. **Requires login** |
+| `GET` | `/users/:id` | Get one user |
+| `POST` | `/users` | Create a user |
+| `PATCH` | `/users/:id` | Update some fields of a user |
+| `DELETE` | `/users/:id` | Delete a user |
+
+### Posts
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/posts?authorId=&limit=&page=` | List posts, optionally by author, paginated |
+| `GET` | `/posts/:id` | Get one post |
+| `POST` | `/posts` | Create a post (draft unless `"publish": true`) |
+| `PATCH` | `/posts/:id` | Update a post, publish or unpublish it |
+| `DELETE` | `/posts/:id` | Delete a post |
+
+Pagination defaults to `limit=10`, `page=1`; `limit` is at most 100.
+
+### Trying requests
+
+Every module has ready-made requests in its `http/` folder (`src/auth/http`, `src/users/http`, `src/posts/http`), for the REST Client extension in VS Code or the HTTP client in JetBrains IDEs. Files that need an id start with a variable such as `@userId = …`: paste an id from a create response there.
+
+## Project structure
+
+```
+src/
+  main.ts                 bootstrap: validation pipe, Swagger, port
+  app.module.ts           config, Observe, TypeORM and feature modules
+  config/                 environment variable validation
+  common/                 shared DTOs (pagination) and types
+  auth/                   signup, login, logout
+  users/                  users: entity, DTOs, service, controller
+  posts/                  posts: DTOs, service, controller
 ```
 
-## Run tests
+Each feature module keeps its `dtos/` (what clients may send), `entities/` (database tables), `http/` request files and `*.spec.ts` tests next to the code.
 
-```bash
-# unit tests
-$ bun run test
+## Current limitations
 
-# e2e tests
-$ bun run test:e2e
+This is a learning project and some parts are deliberately simple for now:
 
-# test coverage
-$ bun run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ bun install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- **Auth is a dummy.** Logging in sets one flag for the whole app, so once anyone logs in, everyone is logged in. It is meant to be replaced with per-client tokens (JWT).
+- **Passwords are stored in plain text.** They are never returned in responses, but they should be hashed (for example with bcrypt or argon2) before this goes anywhere real.
+- **Posts are still stored in memory** and are lost on restart; users are already in PostgreSQL.
+- **Images are URLs only.** `avatarUrl` and `featuredImageUrl` point to existing images; there are no uploads.
 
 ## Observability
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-This project is already instrumented. To connect it, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
+The app reports traces, logs, metrics and errors to [NestJS Observe](https://observe.nestjs.com). To connect it, run the command below and approve the code at [observe.nestjs.com/link](https://observe.nestjs.com/link). It writes `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` into `.env`.
 
 ```bash
-$ npx @nestjs/observe link
+npx @nestjs/observe link
 ```
 
-It writes the app key and secret into `.env` and makes every `nest start` script (`start`, `start:dev`, `start:debug`) load it. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
-
-Or do it by hand: create an application and an API key at [observe.nestjs.com](https://observe.nestjs.com), and set the pair as `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment the app runs in.
-
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+In production, set those variables in the environment instead of `.env`.

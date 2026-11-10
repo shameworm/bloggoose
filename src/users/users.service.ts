@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import {
   ConflictException,
   Inject,
@@ -16,6 +17,9 @@ import { PatchUserDto } from './dtos/patch-user.dto.js';
 import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, PublicUser } from './entities/user.entity.js';
+
+// bcrypt cost factor: each +1 doubles the time to hash (and to brute-force).
+const SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {
@@ -59,11 +63,10 @@ export class UsersService {
   public async create(createUserDto: CreateUserDto): Promise<PublicUser> {
     await this.assertUnique(createUserDto);
 
-    const user = await this.usersRepository.save(
-      this.usersRepository.create(createUserDto),
-    );
+    const user = this.usersRepository.create(createUserDto);
+    user.password = await bcrypt.hash(user.password, SALT_ROUNDS);
 
-    return toPublicUser(user);
+    return toPublicUser(await this.usersRepository.save(user));
   }
 
   public async update(
@@ -73,11 +76,12 @@ export class UsersService {
     const user = await this.getUserOrThrow(id);
     await this.assertUnique(patchUserDto, id);
 
-    const updated = await this.usersRepository.save(
-      this.usersRepository.merge(user, patchUserDto),
-    );
+    this.usersRepository.merge(user, patchUserDto);
+    if (patchUserDto.password) {
+      user.password = await bcrypt.hash(patchUserDto.password, SALT_ROUNDS);
+    }
 
-    return toPublicUser(updated);
+    return toPublicUser(await this.usersRepository.save(user));
   }
 
   public async remove(id: string): Promise<void> {

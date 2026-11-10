@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import {
   ConflictException,
   NotFoundException,
@@ -75,9 +76,25 @@ describe('UsersService', () => {
   it('creates a user without exposing the password', async () => {
     const user = await service.create(john);
 
-    expect(repository.save).toHaveBeenCalledWith(john);
     expect(user).toMatchObject({ id, email: john.email });
     expect(user).not.toHaveProperty('password');
+  });
+
+  it('stores a hash, not the plain password', async () => {
+    await service.create(john);
+
+    const saved = repository.save.mock.calls[0][0] as User;
+    expect(saved.password).not.toBe(john.password);
+    expect(await bcrypt.compare(john.password, saved.password)).toBe(true);
+  });
+
+  it('hashes a new password on update', async () => {
+    repository.findOneBy.mockResolvedValue(storedJohn());
+
+    await service.update(id, { password: 'Newpassword1!' });
+
+    const saved = repository.save.mock.calls[0][0] as User;
+    expect(await bcrypt.compare('Newpassword1!', saved.password)).toBe(true);
   });
 
   it('rejects a taken email', async () => {

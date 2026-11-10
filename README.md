@@ -7,6 +7,7 @@ A REST API for a small blog: users, posts and authentication. Built with [NestJS
 - **NestJS 12** on Express, TypeScript, ES modules
 - **PostgreSQL** with **TypeORM**
 - **class-validator** for request and environment validation
+- **bcrypt** for password hashing
 - **Swagger** API docs
 - **Vitest** for tests, **oxlint** for linting, **Prettier** for formatting
 - **NestJS Observe** for tracing, logs and error tracking
@@ -125,7 +126,6 @@ Each feature module keeps its `dtos/` (what clients may send), `entities/` (data
 This is a learning project and some parts are deliberately simple for now:
 
 - **Auth is a dummy.** Logging in sets one flag for the whole app, so once anyone logs in, everyone is logged in. It is meant to be replaced with per-client tokens (JWT).
-- **Passwords are stored in plain text.** They are never returned in responses, but they should be hashed (for example with bcrypt or argon2) before this goes anywhere real.
 - **Images are URLs only.** `avatarUrl` and `featuredImageUrl` point to existing images; there are no uploads.
 
 ## Observability

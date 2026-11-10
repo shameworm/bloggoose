@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import {
   Inject,
   Injectable,
@@ -27,7 +28,7 @@ export class AuthService {
 
     // Same error for an unknown login and a wrong password, so the response
     // doesn't reveal which emails or usernames are registered.
-    if (!user || user.password !== password) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid login or password');
     }
 

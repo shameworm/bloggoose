@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -17,12 +18,19 @@ describe('AuthService', () => {
     create: ReturnType<typeof vi.fn>;
   };
 
+  // What the database stores; a low cost factor keeps the tests fast.
+  let passwordHash: string;
+
+  beforeAll(async () => {
+    passwordHash = await bcrypt.hash(password, 4);
+  });
+
   beforeEach(async () => {
     usersService = {
       findByLogin: vi.fn((login: string) =>
         Promise.resolve(
           login === email || login === username
-            ? { id, email, username, password }
+            ? { id, email, username, password: passwordHash }
             : null,
         ),
       ),

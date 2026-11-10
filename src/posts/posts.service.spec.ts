@@ -1,38 +1,83 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { AuthService } from '../auth/auth.service.js';
 import { UsersService } from '../users/users.service.js';
+import { Post } from './entities/post.entity.js';
 import { PostsService } from './posts.service.js';
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const id = '22222222-2222-4222-8222-222222222222';
+const authorId = '11111111-1111-4111-8111-111111111111';
+const unknownId = '00000000-0000-0000-0000-000000000000';
 
 const title = 'My First Post!';
 const content = 'A post long enough to pass the thirty character minimum.';
 
+// What the database would hold for a post.
+const storedPost = (fields: Partial<Post> = {}): Post =>
+  Object.assign(
+    {
+      id,
+      authorId,
+      title,
+      slug: 'my-first-post',
+      content,
+      featuredImageUrl: null,
+      publishedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    fields,
+  );
+
 describe('PostsService', () => {
   let service: PostsService;
-  let authorId: string;
+  let usersService: { findById: ReturnType<typeof vi.fn> };
+  let repository: {
+    find: ReturnType<typeof vi.fn>;
+    findOneBy: ReturnType<typeof vi.fn>;
+    existsBy: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    merge: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
+    remove: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
+    usersService = {
+      findById: vi.fn((userId: string) =>
+        userId === authorId
+          ? Promise.resolve({ id: userId })
+          : Promise.reject(new NotFoundException()),
+      ),
+    };
+    repository = {
+      find: vi.fn().mockResolvedValue([]),
+      findOneBy: vi.fn().mockResolvedValue(null),
+      existsBy: vi.fn().mockResolvedValue(false),
+      create: vi.fn((fields: Partial<Post>) => Object.assign({}, fields)),
+      merge: vi.fn((post: Post, fields: Partial<Post>) =>
+        Object.assign(post, fields),
+      ),
+      save: vi.fn((post: Partial<Post>) => Promise.resolve(storedPost(post))),
+      remove: vi.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PostsService, UsersService, AuthService],
+      providers: [
+        PostsService,
+        { provide: UsersService, useValue: usersService },
+        { provide: getRepositoryToken(Post), useValue: repository },
+      ],
     }).compile();
 
     service = module.get<PostsService>(PostsService);
-    ({ id: authorId } = module.get<UsersService>(UsersService).create({
-      email: 'johndoe@example.com',
-      username: 'makarena',
-      password: 'Veryoriginal1!',
-    }));
   });
 
-  it('creates a draft with server-set fields', () => {
-    const post = service.create({ authorId, title, content });
+  it('creates a draft with a slug from the title', async () => {
+    await service.create({ authorId, title, content });
 
-    expect(post).toMatchObject({
-      id: expect.stringMatching(UUID),
+    expect(repository.save).toHaveBeenCalledWith({
       authorId,
       title,
       slug: 'my-first-post',
@@ -40,102 +85,106 @@ describe('PostsService', () => {
       featuredImageUrl: null,
       publishedAt: null,
     });
-    expect(post.createdAt).toBeInstanceOf(Date);
-    expect(post.updatedAt).toEqual(post.createdAt);
   });
 
-  it('publishes on create when asked', () => {
-    const post = service.create({ authorId, title, content, publish: true });
+  it('publishes on create when asked', async () => {
+    const post = await service.create({
+      authorId,
+      title,
+      content,
+      publish: true,
+    });
 
-    expect(post.publishedAt).toEqual(post.createdAt);
+    expect(post.publishedAt).toBeInstanceOf(Date);
   });
 
-  it('makes slugs unique and keeps non-latin letters', () => {
-    expect(service.create({ authorId, title, content }).slug).toBe(
-      'my-first-post',
-    );
-    expect(service.create({ authorId, title, content }).slug).toBe(
-      'my-first-post-2',
-    );
-    expect(
-      service.create({ authorId, title: 'Привіт, світ', content }).slug,
-    ).toBe('привіт-світ');
-  });
-
-  it('rejects a post from an unknown author', () => {
-    expect(() =>
-      service.create({
-        authorId: '00000000-0000-0000-0000-000000000000',
-        title,
-        content,
-      }),
-    ).toThrow(NotFoundException);
-  });
-
-  it('paginates posts', () => {
-    const ids = [0, 1, 2].map(
-      () => service.create({ authorId, title, content }).id,
+  it('adds a number to the slug when it is taken', async () => {
+    repository.existsBy.mockImplementation(({ slug }: Partial<Post>) =>
+      Promise.resolve(slug === 'my-first-post' || slug === 'my-first-post-2'),
     );
 
-    expect(service.findAll({ limit: 2, page: 1 }).map((p) => p.id)).toEqual(
-      ids.slice(0, 2),
+    const post = await service.create({ authorId, title, content });
+
+    expect(post.slug).toBe('my-first-post-3');
+  });
+
+  it('keeps non-latin letters in the slug', async () => {
+    const post = await service.create({
+      authorId,
+      title: 'Привіт, світ',
+      content,
+    });
+
+    expect(post.slug).toBe('привіт-світ');
+  });
+
+  it('rejects a post from an unknown author', async () => {
+    await expect(
+      service.create({ authorId: unknownId, title, content }),
+    ).rejects.toThrow(NotFoundException);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('paginates posts by creation time', async () => {
+    await service.findAll({ limit: 2, page: 3 });
+
+    expect(repository.find).toHaveBeenCalledWith({
+      where: {},
+      order: { createdAt: 'ASC' },
+      skip: 4,
+      take: 2,
+    });
+  });
+
+  it('filters posts by author', async () => {
+    await service.findAll({ authorId, limit: 10, page: 1 });
+
+    expect(repository.find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { authorId } }),
     );
-    expect(service.findAll({ limit: 2, page: 2 }).map((p) => p.id)).toEqual(
-      ids.slice(2),
+  });
+
+  it('throws NotFoundException for an unknown id', async () => {
+    await expect(service.findById(unknownId)).rejects.toThrow(
+      NotFoundException,
     );
   });
 
-  it('filters posts by author', () => {
-    service.create({ authorId, title, content });
+  it('updates fields but keeps the slug', async () => {
+    repository.findOneBy.mockResolvedValue(storedPost());
 
-    expect(service.findAll({ authorId, limit: 10, page: 1 })).toHaveLength(1);
-    expect(
-      service.findAll({
-        authorId: '00000000-0000-0000-0000-000000000000',
-        limit: 10,
-        page: 1,
-      }),
-    ).toEqual([]);
-  });
-
-  it('throws NotFoundException for an unknown id', () => {
-    expect(() =>
-      service.findById('00000000-0000-0000-0000-000000000000'),
-    ).toThrow(NotFoundException);
-  });
-
-  it('updates fields and bumps updatedAt but keeps the slug', () => {
-    const post = service.create({ authorId, title, content });
-    const createdAt = post.createdAt;
-    post.updatedAt = new Date(0);
-
-    const updated = service.update(post.id, { title: 'A new title' });
+    const updated = await service.update(id, { title: 'A new title' });
 
     expect(updated.title).toBe('A new title');
     expect(updated.slug).toBe('my-first-post');
-    expect(updated.createdAt).toBe(createdAt);
-    expect(updated.updatedAt.getTime()).toBeGreaterThan(0);
   });
 
-  it('publishes and unpublishes', () => {
-    const { id } = service.create({ authorId, title, content });
+  it('publishes, keeps the first publish date, and unpublishes', async () => {
+    const post = storedPost();
+    repository.findOneBy.mockResolvedValue(post);
 
-    const published = service.update(id, { publish: true });
-    expect(published.publishedAt).toBeInstanceOf(Date);
-
+    const published = await service.update(id, { publish: true });
     const firstPublishedAt = published.publishedAt;
-    expect(service.update(id, { publish: true }).publishedAt).toBe(
-      firstPublishedAt,
-    );
+    expect(firstPublishedAt).toBeInstanceOf(Date);
 
-    expect(service.update(id, { publish: false }).publishedAt).toBeNull();
+    const republished = await service.update(id, { publish: true });
+    expect(republished.publishedAt).toEqual(firstPublishedAt);
+
+    const unpublished = await service.update(id, { publish: false });
+    expect(unpublished.publishedAt).toBeNull();
   });
 
-  it('removes a post', () => {
-    const { id } = service.create({ authorId, title, content });
+  it('removes a post', async () => {
+    const post = storedPost();
+    repository.findOneBy.mockResolvedValue(post);
 
-    service.remove(id);
+    await service.remove(id);
 
-    expect(() => service.findById(id)).toThrow(NotFoundException);
+    expect(repository.remove).toHaveBeenCalledWith(post);
+  });
+
+  it('throws NotFoundException when removing an unknown post', async () => {
+    await expect(service.remove(unknownId)).rejects.toThrow(NotFoundException);
+    expect(repository.remove).not.toHaveBeenCalled();
   });
 });

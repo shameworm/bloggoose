@@ -1,81 +1,78 @@
-import { randomUUID } from 'node:crypto';
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { UsersService } from '../users/users.service.js';
 import { CreatePostDto } from './dtos/create-post.dto.js';
 import { PatchPostDto } from './dtos/patch-post.dto.js';
 import { PostsQueryDto } from './dtos/posts-query.dto.js';
-import type { Post } from './interfaces/post.interface.js';
+import { Post } from './entities/post.entity.js';
 
-// In-memory store until a database is wired in.
 @Injectable()
 export class PostsService {
-  private readonly posts: Post[] = [];
+  constructor(
+    private readonly usersService: UsersService,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+  ) {}
 
-  constructor(private readonly usersService: UsersService) {}
-
-  public findAll({ authorId, limit, page }: PostsQueryDto): Post[] {
-    const posts =
-      authorId === undefined
-        ? this.posts
-        : this.posts.filter((p) => p.authorId === authorId);
-
-    const start = (page - 1) * limit;
-    return posts.slice(start, start + limit);
+  public findAll({ authorId, limit, page }: PostsQueryDto): Promise<Post[]> {
+    return this.postRepository.find({
+      where: authorId ? { authorId } : {},
+      order: { createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
   }
 
-  public findById(id: string): Post {
+  public findById(id: string): Promise<Post> {
     return this.getPostOrThrow(id);
   }
 
-  public create({
+  public async create({
     authorId,
     title,
     content,
     featuredImageUrl,
     publish,
-  }: CreatePostDto): Post {
+  }: CreatePostDto): Promise<Post> {
     // Throws NotFoundException if the author doesn't exist.
-    this.usersService.findById(authorId);
+    await this.usersService.findById(authorId);
 
-    const now = new Date();
-    const post: Post = {
-      id: randomUUID(),
+    const post = this.postRepository.create({
       authorId,
       title,
-      slug: this.uniqueSlug(title),
+      slug: await this.uniqueSlug(title),
       content,
       featuredImageUrl: featuredImageUrl ?? null,
-      publishedAt: publish ? now : null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.posts.push(post);
+      publishedAt: publish ? new Date() : null,
+    });
 
-    return post;
+    return this.postRepository.save(post);
   }
 
-  public update(id: string, { publish, ...fields }: PatchPostDto): Post {
-    const post = this.getPostOrThrow(id);
+  public async update(
+    id: string,
+    { publish, ...fields }: PatchPostDto,
+  ): Promise<Post> {
+    const post = await this.getPostOrThrow(id);
 
     // The slug stays the same when the title changes, so links keep working.
-    Object.assign(post, fields);
+    this.postRepository.merge(post, fields);
     if (publish !== undefined) {
       post.publishedAt = publish ? (post.publishedAt ?? new Date()) : null;
     }
-    post.updatedAt = new Date();
 
-    return post;
+    return this.postRepository.save(post);
   }
 
-  public remove(id: string): void {
-    const post = this.getPostOrThrow(id);
-    this.posts.splice(this.posts.indexOf(post), 1);
+  public async remove(id: string): Promise<void> {
+    const post = await this.getPostOrThrow(id);
+    await this.postRepository.remove(post);
   }
 
-  private getPostOrThrow(id: string): Post {
-    const post = this.posts.find((p) => p.id === id);
+  private async getPostOrThrow(id: string): Promise<Post> {
+    const post = await this.postRepository.findOneBy({ id });
     if (!post) {
       throw new NotFoundException(`Post with id ${id} not found`);
     }
@@ -83,7 +80,7 @@ export class PostsService {
   }
 
   // "My First Post!" -> "my-first-post", or "my-first-post-2" if taken.
-  private uniqueSlug(title: string): string {
+  private async uniqueSlug(title: string): Promise<string> {
     const base =
       title
         .toLowerCase()
@@ -91,7 +88,7 @@ export class PostsService {
         .replace(/^-|-$/g, '') || 'post';
 
     let slug = base;
-    for (let n = 2; this.posts.some((p) => p.slug === slug); n++) {
+    for (let n = 2; await this.postRepository.existsBy({ slug }); n++) {
       slug = `${base}-${n}`;
     }
     return slug;

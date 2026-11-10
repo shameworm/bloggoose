@@ -15,39 +15,43 @@ import {
 import { CreatePostDto } from './dtos/create-post.dto.js';
 import { PatchPostDto } from './dtos/patch-post.dto.js';
 import { PostsQueryDto } from './dtos/posts-query.dto.js';
-import type { Post as PostEntity } from './interfaces/post.interface.js';
 import { PostsService } from './posts.service.js';
+import { Post as PostEntity } from './entities/post.entity.js';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  public findAll(@Query() postsQuery: PostsQueryDto): PostEntity[] {
+  public findAll(@Query() postsQuery: PostsQueryDto): Promise<PostEntity[]> {
     return this.postsService.findAll(postsQuery);
   }
 
   @Get(':id')
-  public findById(@Param('id', ParseUUIDPipe) id: string): PostEntity {
+  public async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<PostEntity> {
     return this.postsService.findById(id);
   }
 
   @Post()
-  public create(@Body() createPostDto: CreatePostDto): PostEntity {
+  public async create(
+    @Body() createPostDto: CreatePostDto,
+  ): Promise<PostEntity> {
     return this.postsService.create(createPostDto);
   }
 
   @Patch(':id')
-  public update(
+  public async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() patchPostDto: PatchPostDto,
-  ): PostEntity {
+  ): Promise<PostEntity> {
     return this.postsService.update(id, patchPostDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public remove(@Param('id', ParseUUIDPipe) id: string): void {
-    this.postsService.remove(id);
+  public remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.postsService.remove(id);
   }
 }

@@ -115,7 +115,7 @@ src/
   common/                 shared DTOs (pagination) and types
   auth/                   signup, login, logout
   users/                  users: entity, DTOs, service, controller
-  posts/                  posts: DTOs, service, controller
+  posts/                  posts: entity, DTOs, service, controller
 ```
 
 Each feature module keeps its `dtos/` (what clients may send), `entities/` (database tables), `http/` request files and `*.spec.ts` tests next to the code.
@@ -126,7 +126,6 @@ This is a learning project and some parts are deliberately simple for now:
 
 - **Auth is a dummy.** Logging in sets one flag for the whole app, so once anyone logs in, everyone is logged in. It is meant to be replaced with per-client tokens (JWT).
 - **Passwords are stored in plain text.** They are never returned in responses, but they should be hashed (for example with bcrypt or argon2) before this goes anywhere real.
-- **Posts are still stored in memory** and are lost on restart; users are already in PostgreSQL.
 - **Images are URLs only.** `avatarUrl` and `featuredImageUrl` point to existing images; there are no uploads.
 
 ## Observability

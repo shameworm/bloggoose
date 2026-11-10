@@ -7,7 +7,7 @@ import {
 
 import type { ForwardRef } from '../common/types/forward-ref.type.js';
 import { CreateUserDto } from '../users/dtos/create-user.dto.js';
-import type { PublicUser } from '../users/interfaces/user.interface.js';
+import type { PublicUser } from '../users/entities/user.entity.js';
 import { UsersService } from '../users/users.service.js';
 import { LoginDto } from './dtos/login.dto.js';
 
@@ -22,8 +22,8 @@ export class AuthService {
     private readonly usersService: ForwardRef<UsersService>,
   ) {}
 
-  public login({ login, password }: LoginDto): PublicUser {
-    const user = this.usersService.findByLogin(login);
+  public async login({ login, password }: LoginDto): Promise<PublicUser> {
+    const user = await this.usersService.findByLogin(login);
 
     // Same error for an unknown login and a wrong password, so the response
     // doesn't reveal which emails or usernames are registered.
@@ -35,7 +35,7 @@ export class AuthService {
     return this.usersService.findById(user.id);
   }
 
-  public signup(createUserDto: CreateUserDto): PublicUser {
+  public signup(createUserDto: CreateUserDto): Promise<PublicUser> {
     return this.usersService.create(createUserDto);
   }
 

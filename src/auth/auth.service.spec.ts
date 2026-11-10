@@ -4,54 +4,82 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
 
+const id = '11111111-1111-4111-8111-111111111111';
 const email = 'johndoe@example.com';
 const username = 'makarena';
 const password = 'Veryoriginal1!';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let usersService: {
+    findByLogin: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
+    usersService = {
+      findByLogin: vi.fn((login: string) =>
+        Promise.resolve(
+          login === email || login === username
+            ? { id, email, username, password }
+            : null,
+        ),
+      ),
+      findById: vi.fn().mockResolvedValue({ id, email, username }),
+      create: vi.fn().mockResolvedValue({ id, email, username }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService, UsersService],
+      providers: [
+        AuthService,
+        { provide: UsersService, useValue: usersService },
+      ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    service.signup({ email, username, password });
   });
 
-  it('logs in with an email without exposing the password', () => {
-    const user = service.login({ login: email, password });
+  it('logs in with an email without exposing the password', async () => {
+    const user = await service.login({ login: email, password });
 
     expect(user.email).toBe(email);
     expect(user).not.toHaveProperty('password');
     expect(service.isAuth).toBe(true);
   });
 
-  it('logs in with a username', () => {
-    expect(service.login({ login: username, password }).username).toBe(
-      username,
-    );
+  it('logs in with a username', async () => {
+    const user = await service.login({ login: username, password });
+
+    expect(user.username).toBe(username);
   });
 
-  it('rejects a wrong password', () => {
-    expect(() =>
+  it('rejects a wrong password', async () => {
+    await expect(
       service.login({ login: email, password: 'Wrongpassword1!' }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toThrow(UnauthorizedException);
     expect(service.isAuth).toBe(false);
   });
 
-  it('rejects an unknown login with the same error', () => {
-    expect(() =>
+  it('rejects an unknown login with the same error', async () => {
+    await expect(
       service.login({ login: 'nobody@example.com', password }),
-    ).toThrow('Invalid login or password');
-    expect(() => service.login({ login: 'nobodyatall', password })).toThrow(
-      'Invalid login or password',
-    );
+    ).rejects.toThrow('Invalid login or password');
+    await expect(
+      service.login({ login: 'nobodyatall', password }),
+    ).rejects.toThrow('Invalid login or password');
   });
 
-  it('logs out', () => {
-    service.login({ login: email, password });
+  it('signs up through the users service', async () => {
+    const dto = { email, username, password };
+
+    await service.signup(dto);
+
+    expect(usersService.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('logs out', async () => {
+    await service.login({ login: email, password });
 
     service.logout();
 

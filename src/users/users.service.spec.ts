@@ -1,14 +1,9 @@
 import bcrypt from 'bcrypt';
-import {
-  ConflictException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Not } from 'typeorm';
 
-import { AuthService } from '../auth/auth.service.js';
 import { User } from './entities/user.entity.js';
 import { USER_ROLES } from './entities/user-role.enum.js';
 import { UsersService } from './users.service.js';
@@ -39,7 +34,6 @@ const storedJohn = (): User => ({
 
 describe('UsersService', () => {
   let service: UsersService;
-  let authService: { isAuth: boolean };
   let repository: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
@@ -52,7 +46,6 @@ describe('UsersService', () => {
   };
 
   beforeEach(async () => {
-    authService = { isAuth: false };
     repository = {
       find: vi.fn().mockResolvedValue([]),
       findOne: vi.fn().mockResolvedValue(null),
@@ -71,7 +64,6 @@ describe('UsersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: AuthService, useValue: authService },
         { provide: getRepositoryToken(User), useValue: repository },
       ],
     }).compile();
@@ -123,16 +115,7 @@ describe('UsersService', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
-  it('rejects listing users when not logged in', async () => {
-    await expect(service.findAll({ limit: 10, page: 1 })).rejects.toThrow(
-      UnauthorizedException,
-    );
-    expect(repository.find).not.toHaveBeenCalled();
-  });
-
   it('paginates users by creation time', async () => {
-    authService.isAuth = true;
-
     await service.findAll({ limit: 2, page: 3 });
 
     expect(repository.find).toHaveBeenCalledWith({

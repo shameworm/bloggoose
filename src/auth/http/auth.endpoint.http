@@ -1,4 +1,8 @@
-## Sign up - expect 201
+## REST Client keeps cookies between requests, so the refresh_token cookie
+## from login is sent to /auth/refresh and /auth/logout automatically.
+## Seeded users: alice, bob, carol, dave, erin / password123
+
+## Sign up - expect 201 { accessToken, user } + refresh_token cookie
 POST http://localhost:3000/auth/signup
 Content-Type: application/json
 
@@ -9,32 +13,51 @@ Content-Type: application/json
 }
 
 ###
-## Get users before login - expect 401
-GET http://localhost:3000/users
-
-###
-## Log in with email - expect 200
+## Log in - expect 200 { accessToken, user } + refresh_token cookie
+# @name login
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "login": "johndoe@example.com",
-    "password": "Veryoriginal1!"
+    "login": "alice",
+    "password": "password123"
 }
 
 ###
-## Log in with username - expect 200
-POST http://localhost:3000/auth/login
+## Who am I - expect 200 (uses the access token from "login" above)
+GET http://localhost:3000/auth/me
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+## Who am I without a token - expect 401 "Missing access token"
+GET http://localhost:3000/auth/me
+
+###
+## Garbage token - expect 401 "Invalid or expired access token"
+GET http://localhost:3000/auth/me
+Authorization: Bearer abc
+
+###
+## Create a post as the logged-in user - expect 201, authorId = alice
+POST http://localhost:3000/posts
+Authorization: Bearer {{login.response.body.accessToken}}
 Content-Type: application/json
 
 {
-    "login": "makarena",
-    "password": "Veryoriginal1!"
+    "body": "Posted with a token"
 }
 
 ###
-## Get users after login - expect 200
-GET http://localhost:3000/users
+## Refresh - expect 200 { accessToken } + a NEW refresh_token cookie
+POST http://localhost:3000/auth/refresh
+
+###
+## Log out - expect 204, cookie cleared
+POST http://localhost:3000/auth/logout
+
+###
+## Refresh after logout - expect 401 (no cookie anymore)
+POST http://localhost:3000/auth/refresh
 
 ###
 ## Wrong password - expect 401 "Invalid login or password"
@@ -42,37 +65,17 @@ POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "login": "johndoe@example.com",
+    "login": "alice",
     "password": "Wrongpassword1!"
 }
 
 ###
-## Unknown email - expect 401 with the same message
-POST http://localhost:3000/auth/login
-Content-Type: application/json
-
-{
-    "login": "nobody@example.com",
-    "password": "Veryoriginal1!"
-}
-
-###
-## Unknown username - expect 401 with the same message
+## Unknown login - expect 401 with the same message
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
     "login": "nobodyatall",
-    "password": "Veryoriginal1!"
-}
-
-###
-## Empty login (@IsNotEmpty) - expect 400
-POST http://localhost:3000/auth/login
-Content-Type: application/json
-
-{
-    "login": "",
     "password": "Veryoriginal1!"
 }
 
@@ -86,7 +89,3 @@ Content-Type: application/json
     "email": "other@example.com",
     "password": "Veryoriginal1!"
 }
-
-###
-## Log out - expect 204
-POST http://localhost:3000/auth/logout

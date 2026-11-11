@@ -1,15 +1,10 @@
 import bcrypt from 'bcrypt';
 import {
   ConflictException,
-  Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
-  forwardRef,
 } from '@nestjs/common';
 
-import type { ForwardRef } from '../common/types/forward-ref.type.js';
-import { AuthService } from '../auth/auth.service.js';
 import { CreateUserDto } from './dtos/create-user.dto.js';
 import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
@@ -24,9 +19,6 @@ const SALT_ROUNDS = 10;
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: ForwardRef<AuthService>,
-
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
@@ -35,10 +27,6 @@ export class UsersService {
     limit,
     page,
   }: PaginationQueryDto): Promise<PublicUser[]> {
-    if (!this.authService.isAuth) {
-      throw new UnauthorizedException('You are not logged in');
-    }
-
     const start = (page - 1) * limit;
     return this.usersRepository.find({
       order: { createdAt: 'ASC' },

@@ -10,13 +10,13 @@ Content-Type: application/json
 }
 
 ###
-## Patch firstName and lastName - expect 200
+## Patch displayName and bio - expect 200
 PATCH http://localhost:3000/users/{{userId}}
 Content-Type: application/json
 
 {
-    "firstName": "Johnny",
-    "lastName": "Doey"
+    "displayName": "Johnny",
+    "bio": "Writes about geese."
 }
 
 ###
@@ -72,15 +72,6 @@ Content-Type: application/json
 }
 
 ###
-## firstName too short, 2 chars (@MinLength(3)) - expect 400
-PATCH http://localhost:3000/users/{{userId}}
-Content-Type: application/json
-
-{
-    "firstName": "Jo"
-}
-
-###
 ## username too short, 7 chars (@MinLength(8)) - expect 400
 PATCH http://localhost:3000/users/{{userId}}
 Content-Type: application/json
@@ -122,5 +113,5 @@ PATCH http://localhost:3000/users/abc
 Content-Type: application/json
 
 {
-    "firstName": "Johnny"
+    "displayName": "Johnny"
 }

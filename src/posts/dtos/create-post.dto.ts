@@ -1,11 +1,8 @@
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, IsUrl, IsUUID, Length } from 'class-validator';
 
+// The author is the logged-in user (from the access token), never the body.
 export class CreatePostDto {
-  // Taken from the logged-in user once auth has per-client tokens.
-  @IsUUID()
-  authorId: string;
-
   // 1-500 characters, matching the posts.body column. Trimmed first, so a
   // body of only spaces fails the length check.
   @Transform(({ value }: { value: unknown }) =>

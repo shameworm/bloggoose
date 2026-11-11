@@ -30,13 +30,12 @@ export class PostsService {
     return this.getPostOrThrow(id);
   }
 
-  public async create({
-    authorId,
-    body,
-    replyToId,
-    featuredImageUrl,
-  }: CreatePostDto): Promise<Post> {
-    // Throws NotFoundException if the author doesn't exist.
+  public async create(
+    authorId: string,
+    { body, replyToId, featuredImageUrl }: CreatePostDto,
+  ): Promise<Post> {
+    // The token can outlive its user (deleted account): 404 instead of a
+    // foreign key error.
     await this.usersService.findById(authorId);
 
     // The post and the counters it changes are written together or not at all.

@@ -15,6 +15,8 @@ const USERNAMES = ['alice', 'bob', 'carol', 'dave', 'erin'];
 
 const POSTS_PER_USER = 20;
 
+const REPLIES_PER_USER = 5;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 await dataSource.initialize();
@@ -44,13 +46,8 @@ try {
 
         return manager.create(Post, {
           authorId: user.id,
-          title: `${user.username}'s post #${i + 1}`,
-          slug: `${user.username}-post-${i + 1}`,
-          content: `Seeded post number ${i + 1} by ${user.username}. `.repeat(
-            3,
-          ),
+          body: `Post #${i + 1} by @${user.username}. Hello, BlogGoose!`,
           featuredImageUrl: null,
-          publishedAt: i % 5 === 0 ? null : createdAt, // every 5th is a draft
           createdAt,
         });
       }),
@@ -58,7 +55,47 @@ try {
 
     await manager.save(Post, posts, { chunk: 50 });
 
-    console.log(`Seeded ${users.length} users and ${posts.length} posts.`);
+    const usernameById = new Map(users.map((u) => [u.id, u.username]));
+
+    // Each user replies to a few random posts by other people, a bit later.
+    const replies = users.flatMap((user) =>
+      Array.from({ length: REPLIES_PER_USER }, () => {
+        const others = posts.filter((post) => post.authorId !== user.id);
+        const parent = others[Math.floor(Math.random() * others.length)];
+        const createdAt = new Date(
+          Math.min(
+            Date.now(),
+            parent.createdAt.getTime() + Math.random() * DAY_MS,
+          ),
+        );
+
+        return manager.create(Post, {
+          authorId: user.id,
+          body: `@${usernameById.get(parent.authorId)} nice post!`,
+          replyToId: parent.id,
+          featuredImageUrl: null,
+          createdAt,
+        });
+      }),
+    );
+
+    await manager.save(Post, replies, { chunk: 50 });
+
+    // Recount instead of tracking counters by hand: always correct.
+    await manager.query(`
+      UPDATE posts p SET reply_count = (
+        SELECT count(*) FROM posts r
+        WHERE r.reply_to_id = p.id AND r.deleted_at IS NULL
+      )`);
+    await manager.query(`
+      UPDATE users u SET post_count = (
+        SELECT count(*) FROM posts p
+        WHERE p.author_id = u.id AND p.deleted_at IS NULL
+      )`);
+
+    console.log(
+      `Seeded ${users.length} users, ${posts.length} posts and ${replies.length} replies.`,
+    );
     console.log(`Log in as any of: ${USERNAMES.join(', ')} / ${PASSWORD}`);
   });
 } finally {

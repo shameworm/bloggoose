@@ -23,7 +23,8 @@
     "typeorm": "bun ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
     "db:generate": "bun run typeorm migration:generate",
     "db:migrate": "bun run typeorm migration:run",
-    "db:revert": "bun run typeorm migration:revert"
+    "db:revert": "bun run typeorm migration:revert",
+    "db:seed": "bun src/database/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

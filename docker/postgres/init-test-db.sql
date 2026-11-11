@@ -1,0 +1,1 @@
+CREATE DATABASE bloggoose_test;

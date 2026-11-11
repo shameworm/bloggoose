@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -30,6 +31,9 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
+
+  // Fills request.cookies; the refresh token arrives as a cookie.
+  app.use(cookieParser());
 
   app.enableCors({ origin: config.get('CORS_ORIGIN'), credentials: true });
   app.enableShutdownHooks();

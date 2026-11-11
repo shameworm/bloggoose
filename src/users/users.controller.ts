@@ -15,6 +15,7 @@ import {
 import { CreateUserDto } from './dtos/create-user.dto.js';
 import { PaginationQueryDto } from '../common/dtos/pagination-query.dto.js';
 import { PatchUserDto } from './dtos/patch-user.dto.js';
+import { Public } from '../common/decorators/public.decorator.js';
 import type { PublicUser } from './entities/user.entity.js';
 import { UsersService } from './users.service.js';
 
@@ -29,6 +30,7 @@ export class UsersController {
     return this.usersService.findAll(paginationQuery);
   }
 
+  @Public()
   @Get(':id')
   public findById(@Param('id', ParseUUIDPipe) id: string): Promise<PublicUser> {
     return this.usersService.findById(id);

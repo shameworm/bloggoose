@@ -2,13 +2,19 @@ import bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { USER_ROLES } from '../users/entities/user-role.enum.js';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
+import { TokensService } from './tokens.service.js';
 
 const id = '11111111-1111-4111-8111-111111111111';
 const email = 'johndoe@example.com';
 const username = 'makarena';
 const password = 'Veryoriginal1!';
+const device = 'vitest';
+
+const publicUser = { id, email, username, role: USER_ROLES.USER };
+const tokens = { accessToken: 'access', refreshToken: 'refresh' };
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -16,6 +22,11 @@ describe('AuthService', () => {
     findByLogin: ReturnType<typeof vi.fn>;
     findById: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
+  };
+  let tokensService: {
+    issue: ReturnType<typeof vi.fn>;
+    rotate: ReturnType<typeof vi.fn>;
+    revoke: ReturnType<typeof vi.fn>;
   };
 
   // What the database stores; a low cost factor keeps the tests fast.
@@ -34,63 +45,70 @@ describe('AuthService', () => {
             : null,
         ),
       ),
-      findById: vi.fn().mockResolvedValue({ id, email, username }),
-      create: vi.fn().mockResolvedValue({ id, email, username }),
+      findById: vi.fn().mockResolvedValue(publicUser),
+      create: vi.fn().mockResolvedValue(publicUser),
+    };
+    tokensService = {
+      issue: vi.fn().mockResolvedValue(tokens),
+      rotate: vi.fn().mockResolvedValue(tokens),
+      revoke: vi.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: usersService },
+        { provide: TokensService, useValue: tokensService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
   });
 
-  it('logs in with an email without exposing the password', async () => {
-    const user = await service.login({ login: email, password });
+  it('logs in with an email and issues tokens', async () => {
+    const result = await service.login({ login: email, password }, device);
 
-    expect(user.email).toBe(email);
-    expect(user).not.toHaveProperty('password');
-    expect(service.isAuth).toBe(true);
+    expect(result).toEqual({ user: publicUser, ...tokens });
+    expect(result.user).not.toHaveProperty('password');
+    expect(tokensService.issue).toHaveBeenCalledWith(publicUser, device);
   });
 
   it('logs in with a username', async () => {
-    const user = await service.login({ login: username, password });
+    const result = await service.login({ login: username, password }, device);
 
-    expect(user.username).toBe(username);
+    expect(result.user.username).toBe(username);
   });
 
-  it('rejects a wrong password', async () => {
+  it('rejects a wrong password without issuing tokens', async () => {
     await expect(
-      service.login({ login: email, password: 'Wrongpassword1!' }),
+      service.login({ login: email, password: 'Wrongpassword1!' }, device),
     ).rejects.toThrow(UnauthorizedException);
-    expect(service.isAuth).toBe(false);
+    expect(tokensService.issue).not.toHaveBeenCalled();
   });
 
   it('rejects an unknown login with the same error', async () => {
     await expect(
-      service.login({ login: 'nobody@example.com', password }),
+      service.login({ login: 'nobody@example.com', password }, device),
     ).rejects.toThrow('Invalid login or password');
     await expect(
-      service.login({ login: 'nobodyatall', password }),
+      service.login({ login: 'nobodyatall', password }, device),
     ).rejects.toThrow('Invalid login or password');
   });
 
-  it('signs up through the users service', async () => {
+  it('signs up through the users service and issues tokens', async () => {
     const dto = { email, username, password };
 
-    await service.signup(dto);
+    const result = await service.signup(dto, device);
 
     expect(usersService.create).toHaveBeenCalledWith(dto);
+    expect(result).toEqual({ user: publicUser, ...tokens });
   });
 
-  it('logs out', async () => {
-    await service.login({ login: email, password });
+  it('refreshes and logs out through the tokens service', async () => {
+    await expect(service.refresh('old')).resolves.toEqual(tokens);
+    expect(tokensService.rotate).toHaveBeenCalledWith('old');
 
-    service.logout();
-
-    expect(service.isAuth).toBe(false);
+    await service.logout('old');
+    expect(tokensService.revoke).toHaveBeenCalledWith('old');
   });
 });

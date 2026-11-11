@@ -1,46 +1,55 @@
 import bcrypt from 'bcrypt';
-import {
-  Inject,
-  Injectable,
-  UnauthorizedException,
-  forwardRef,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
-import type { ForwardRef } from '../common/types/forward-ref.type.js';
 import { CreateUserDto } from '../users/dtos/create-user.dto.js';
 import type { PublicUser } from '../users/entities/user.entity.js';
 import { UsersService } from '../users/users.service.js';
 import { LoginDto } from './dtos/login.dto.js';
+import { TokensService } from './tokens.service.js';
+import type { TokenPair } from './types/jwt-payload.type.js';
+
+export interface AuthResult extends TokenPair {
+  user: PublicUser;
+}
 
 @Injectable()
 export class AuthService {
-  // Dummy auth: one flag shared by the whole app, so if anyone logs in,
-  // everyone is logged in. Replace with per-client tokens (e.g. JWT) later.
-  public isAuth = false;
-
   constructor(
-    @Inject(forwardRef(() => UsersService))
-    private readonly usersService: ForwardRef<UsersService>,
+    private readonly userService: UsersService,
+    private readonly tokensService: TokensService,
   ) {}
 
-  public async login({ login, password }: LoginDto): Promise<PublicUser> {
-    const user = await this.usersService.findByLogin(login);
+  public async signup(
+    createUserDto: CreateUserDto,
+    deviceName: string | null,
+  ): Promise<AuthResult> {
+    const user = await this.userService.create(createUserDto);
+    return { user, ...(await this.tokensService.issue(user, deviceName)) };
+  }
 
-    // Same error for an unknown login and a wrong password, so the response
-    // doesn't reveal which emails or usernames are registered.
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+  public async login(
+    { login, password }: LoginDto,
+    deviceName: string | null,
+  ): Promise<AuthResult> {
+    const found = await this.userService.findByLogin(login);
+
+    if (!found || !(await bcrypt.compare(password, found.password))) {
       throw new UnauthorizedException('Invalid login or password');
     }
 
-    this.isAuth = true;
-    return this.usersService.findById(user.id);
+    const user = await this.userService.findById(found.id);
+    return { user, ...(await this.tokensService.issue(user, deviceName)) };
   }
 
-  public signup(createUserDto: CreateUserDto): Promise<PublicUser> {
-    return this.usersService.create(createUserDto);
+  public async refresh(refreshToken: string): Promise<TokenPair> {
+    return this.tokensService.rotate(refreshToken);
   }
 
-  public logout(): void {
-    this.isAuth = false;
+  public async logout(refreshToken: string): Promise<void> {
+    return this.tokensService.revoke(refreshToken);
+  }
+
+  public me(userId: string): Promise<PublicUser> {
+    return this.userService.findById(userId);
   }
 }

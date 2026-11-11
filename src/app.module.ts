@@ -3,6 +3,7 @@ import { createObserveModule } from '@nestjs/observe';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
+import { buildTypeOrmOptions } from './database/typeorm.options.js';
 import { EnvironmentVariables, validate } from './config/env.validation.js';
 import { UsersModule } from './users/users.module.js';
 import { PostsModule } from './posts/posts.module.js';
@@ -26,16 +27,14 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService<EnvironmentVariables, true>) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST', { infer: true }),
-        port: config.get('DB_PORT', { infer: true }),
-        username: config.get('DB_USERNAME', { infer: true }),
-        password: config.get('DB_PASSWORD', { infer: true }),
-        database: config.get('DB_NAME', { infer: true }),
-        autoLoadEntities: true,
-        synchronize: config.get('NODE_ENV', { infer: true }) !== 'production',
-      }),
+      useFactory: (config: ConfigService<EnvironmentVariables, true>) =>
+        buildTypeOrmOptions({
+          DB_HOST: config.get('DB_HOST', { infer: true }),
+          DB_PORT: config.get('DB_PORT', { infer: true }),
+          DB_USERNAME: config.get('DB_USERNAME', { infer: true }),
+          DB_PASSWORD: config.get('DB_PASSWORD', { infer: true }),
+          DB_NAME: config.get('DB_NAME', { infer: true }),
+        }),
     }),
   ],
   controllers: [],

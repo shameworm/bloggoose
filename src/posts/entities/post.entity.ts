@@ -21,7 +21,7 @@ export class Post {
   // One user writes many posts. Deleting a user deletes their posts.
   // Only loaded when a query asks for it, so it's usually undefined.
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'authorId' })
+  @JoinColumn({ name: 'author_id' })
   author?: User;
 
   @Column()

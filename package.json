@@ -19,7 +19,11 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "typeorm": "bun ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
+    "db:generate": "bun run typeorm migration:generate",
+    "db:migrate": "bun run typeorm migration:run",
+    "db:revert": "bun run typeorm migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

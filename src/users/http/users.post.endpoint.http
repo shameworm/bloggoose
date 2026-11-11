@@ -3,15 +3,14 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-    "firstName": "John",
-    "lastName": "Doe",
+    "displayName": "John Doe",
     "username": "makarena",
     "email": "johndoe@example.com",
     "password": "Veryoriginal1!"
 }
 
 ###
-## No firstName/lastName (both @IsOptional) - expect 201
+## No displayName (optional) - expect 201
 POST http://localhost:3000/users
 Content-Type: application/json
 
@@ -39,30 +38,6 @@ Content-Type: application/json
 {
     "username": "makarena",
     "email": "johndoe-at-example",
-    "password": "Veryoriginal1!"
-}
-
-###
-## firstName too short, 2 chars (@MinLength(3)) - expect 400
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-    "firstName": "Jo",
-    "username": "makarena",
-    "email": "johndoe@example.com",
-    "password": "Veryoriginal1!"
-}
-
-###
-## lastName too short, 2 chars (@MinLength(3)) - expect 400
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-    "lastName": "Do",
-    "username": "makarena",
-    "email": "johndoe@example.com",
     "password": "Veryoriginal1!"
 }
 
@@ -133,12 +108,12 @@ Content-Type: application/json
 }
 
 ###
-## wrong types: firstName number, email not a string (@IsString) - expect 400
+## wrong types: displayName number, email not a string (@IsString) - expect 400
 POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-    "firstName": 123,
+    "displayName": 123,
     "username": "makarena",
     "email": 456,
     "password": "Veryoriginal1!"

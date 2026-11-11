@@ -12,17 +12,21 @@ import {
 export class CreateUserDto {
   @IsString()
   @IsOptional()
-  @MinLength(3)
-  firstName?: string;
+  @MaxLength(255)
+  displayName?: string;
 
   @IsString()
   @IsOptional()
-  @MinLength(3)
-  lastName?: string;
+  @MaxLength(160)
+  bio?: string;
 
   @IsOptional()
   @IsUrl()
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  bannerUrl?: string;
 
   @IsString()
   @IsNotEmpty()

@@ -1,35 +1,26 @@
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  IsUUID,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsOptional, IsString, IsUrl, IsUUID, Length } from 'class-validator';
 
 export class CreatePostDto {
   // Taken from the logged-in user once auth has per-client tokens.
   @IsUUID()
   authorId: string;
 
+  // 1-500 characters, matching the posts.body column. Trimmed first, so a
+  // body of only spaces fails the length check.
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  title: string;
+  @Length(1, 500)
+  body: string;
 
-  @IsString()
-  @MinLength(30)
-  @MaxLength(50_000)
-  content: string;
+  // Set to reply to another post.
+  @IsOptional()
+  @IsUUID()
+  replyToId?: string;
 
   @IsOptional()
   @IsUrl()
   featuredImageUrl?: string;
-
-  // The server sets publishedAt; the client only decides whether to publish.
-  @IsOptional()
-  @IsBoolean()
-  publish?: boolean;
 }

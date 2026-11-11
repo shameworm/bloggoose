@@ -1,7 +1,8 @@
 ## Paste an id from a create post response (POST /posts)
 @postId = paste-post-id-here
 
-## Delete post - expect 204 (or 404 if it doesn't exist)
+## Delete post (soft delete) - expect 204, then GET returns 404 and the
+## parent's replyCount and the author's postCount go down by 1
 DELETE http://localhost:3000/posts/{{postId}}
 
 ###

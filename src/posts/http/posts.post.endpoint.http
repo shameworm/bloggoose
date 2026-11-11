@@ -1,26 +1,38 @@
-## Users live in memory: sign up first (auth.endpoint.http) and paste the id
+## Paste a user id (bun run db:seed, then GET /users, or POST /auth/signup)
 @userId = paste-user-id-here
 
-## Create draft (publishedAt: null) - expect 201
+## Paste an id from a create post response, to reply to it
+@postId = paste-post-id-here
+
+## Create post - expect 201
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "title": "My First Post!",
-    "content": "A post long enough to pass the thirty character minimum."
+    "body": "Hello, BlogGoose!"
 }
 
 ###
-## Create and publish - expect 201, slug "my-first-post-2" if the title is taken
+## Reply to a post - expect 201, the parent's replyCount goes up by 1
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "title": "My First Post!",
-    "content": "A post long enough to pass the thirty character minimum.",
-    "publish": true
+    "body": "Nice post!",
+    "replyToId": "{{postId}}"
+}
+
+###
+## Reply to an unknown post - expect 404
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+    "authorId": "{{userId}}",
+    "body": "Nice post!",
+    "replyToId": "00000000-0000-4000-8000-000000000000"
 }
 
 ###
@@ -30,41 +42,38 @@ Content-Type: application/json
 
 {
     "authorId": "00000000-0000-4000-8000-000000000000",
-    "title": "My First Post!",
-    "content": "A post long enough to pass the thirty character minimum."
+    "body": "Hello, BlogGoose!"
 }
 
 ###
-## Missing title (@IsNotEmpty) - expect 400
+## Only spaces (trimmed, then @Length(1, 500)) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "content": "A post long enough to pass the thirty character minimum."
+    "body": "     "
 }
 
 ###
-## content too short, under 30 chars (@MinLength(30)) - expect 400
+## Over 500 characters (@Length(1, 500)) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "title": "My First Post!",
-    "content": "Too short"
+    "body": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }
 
 ###
-## publish as string (@IsBoolean) - expect 400
+## replyToId not a UUID (@IsUUID) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "title": "My First Post!",
-    "content": "A post long enough to pass the thirty character minimum.",
-    "publish": "yes"
+    "body": "Nice post!",
+    "replyToId": "abc"
 }
 
 ###
@@ -74,10 +83,8 @@ Content-Type: application/json
 
 {
     "authorId": "{{userId}}",
-    "title": "My First Post!",
-    "content": "A post long enough to pass the thirty character minimum.",
-    "slug": "custom",
-    "publishedAt": "2020-01-01T00:00:00.000Z"
+    "body": "Hello, BlogGoose!",
+    "likeCount": 1000
 }
 
 ###

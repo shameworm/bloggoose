@@ -97,7 +97,7 @@ describe('PostsService', () => {
 
   describe('create', () => {
     it('saves the post and counts it for the author', async () => {
-      await service.create({ authorId, body });
+      await service.create(authorId, { body });
 
       expect(manager.save).toHaveBeenCalledWith({
         authorId,
@@ -115,8 +115,7 @@ describe('PostsService', () => {
     });
 
     it('counts a reply on its parent', async () => {
-      const post = await service.create({
-        authorId,
+      const post = await service.create(authorId, {
         body,
         replyToId: parentId,
       });
@@ -132,16 +131,16 @@ describe('PostsService', () => {
 
     it('rejects a reply to an unknown post', async () => {
       await expect(
-        service.create({ authorId, body, replyToId: unknownId }),
+        service.create(authorId, { body, replyToId: unknownId }),
       ).rejects.toThrow(NotFoundException);
       expect(manager.save).not.toHaveBeenCalled();
       expect(manager.increment).not.toHaveBeenCalled();
     });
 
     it('rejects a post from an unknown author', async () => {
-      await expect(
-        service.create({ authorId: unknownId, body }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create(unknownId, { body })).rejects.toThrow(
+        NotFoundException,
+      );
       expect(repository.manager.transaction).not.toHaveBeenCalled();
     });
   });

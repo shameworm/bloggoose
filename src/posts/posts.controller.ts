@@ -11,6 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 
+import type { AccessTokenPayload } from '../auth/types/jwt-payload.type.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Public } from '../common/decorators/public.decorator.js';
 import { CreatePostDto } from './dtos/create-post.dto.js';
 import { PostsQueryDto } from './dtos/posts-query.dto.js';
 import { PostsService } from './posts.service.js';
@@ -21,11 +24,13 @@ import { Post as PostEntity } from './entities/post.entity.js';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  @Public()
   @Get()
   public findAll(@Query() postsQuery: PostsQueryDto): Promise<PostEntity[]> {
     return this.postsService.findAll(postsQuery);
   }
 
+  @Public()
   @Get(':id')
   public async findById(
     @Param('id', ParseUUIDPipe) id: string,
@@ -35,9 +40,10 @@ export class PostsController {
 
   @Post()
   public async create(
+    @CurrentUser() user: AccessTokenPayload,
     @Body() createPostDto: CreatePostDto,
   ): Promise<PostEntity> {
-    return this.postsService.create(createPostDto);
+    return this.postsService.create(user.sub, createPostDto);
   }
 
   @Delete(':id')

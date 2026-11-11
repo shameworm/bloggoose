@@ -1,15 +1,27 @@
-## Paste a user id (bun run db:seed, then GET /users, or POST /auth/signup)
-@userId = paste-user-id-here
+## The author is the logged-in user (from the access token), not a body field.
+## Seeded users: alice, bob, carol, dave, erin / password123
 
-## Paste an id from a create post response, to reply to it
-@postId = paste-post-id-here
-
-## Create post - expect 201
-POST http://localhost:3000/posts
+## Log in - run this first, the requests below use its access token
+# @name login
+POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "authorId": "{{userId}}",
+    "login": "alice",
+    "password": "password123"
+}
+
+###
+## Paste an id from a create post response, to reply to it
+@postId = paste-post-id-here
+@token = {{login.response.body.accessToken}}
+
+## Create post - expect 201, authorId is alice
+POST http://localhost:3000/posts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
     "body": "Hello, BlogGoose!"
 }
 
@@ -17,9 +29,9 @@ Content-Type: application/json
 ## Reply to a post - expect 201, the parent's replyCount goes up by 1
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
     "body": "Nice post!",
     "replyToId": "{{postId}}"
 }
@@ -28,17 +40,27 @@ Content-Type: application/json
 ## Reply to an unknown post - expect 404
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
     "body": "Nice post!",
     "replyToId": "00000000-0000-4000-8000-000000000000"
 }
 
 ###
-## Unknown author - expect 404
+## No access token - expect 401
 POST http://localhost:3000/posts
 Content-Type: application/json
+
+{
+    "body": "Hello, BlogGoose!"
+}
+
+###
+## authorId in the body (forbidNonWhitelisted) - expect 400
+POST http://localhost:3000/posts
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
     "authorId": "00000000-0000-4000-8000-000000000000",
@@ -49,9 +71,9 @@ Content-Type: application/json
 ## Only spaces (trimmed, then @Length(1, 500)) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
     "body": "     "
 }
 
@@ -59,19 +81,19 @@ Content-Type: application/json
 ## Over 500 characters (@Length(1, 500)) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
-    "body": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    "body": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }
 
 ###
 ## replyToId not a UUID (@IsUUID) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
     "body": "Nice post!",
     "replyToId": "abc"
 }
@@ -80,9 +102,9 @@ Content-Type: application/json
 ## Server-owned fields (forbidNonWhitelisted) - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "authorId": "{{userId}}",
     "body": "Hello, BlogGoose!",
     "likeCount": 1000
 }
@@ -91,5 +113,6 @@ Content-Type: application/json
 ## Empty body, every required field missing - expect 400
 POST http://localhost:3000/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {}

@@ -26,7 +26,7 @@ export class User {
   password: string;
 
   @Column({ type: 'varchar', nullable: true })
-  displayName: string;
+  displayName: string | null;
 
   @Column({ type: 'varchar', length: 160, nullable: true })
   bio: string | null;
@@ -40,14 +40,11 @@ export class User {
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @Column({ type: 'int', default: 0 })
-  followersCount: number = 0;
+  @Column({ type: 'int', default: 0 }) followersCount: number;
 
-  @Column({ type: 'int', default: 0 })
-  followingCount: number = 0;
+  @Column({ type: 'int', default: 0 }) followingCount: number;
 
-  @Column({ type: 'int', default: 0 })
-  postCount: number = 0;
+  @Column({ type: 'int', default: 0 }) postCount: number;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;

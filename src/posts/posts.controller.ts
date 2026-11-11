@@ -7,17 +7,16 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
 } from '@nestjs/common';
 
 import { CreatePostDto } from './dtos/create-post.dto.js';
-import { PatchPostDto } from './dtos/patch-post.dto.js';
 import { PostsQueryDto } from './dtos/posts-query.dto.js';
 import { PostsService } from './posts.service.js';
 import { Post as PostEntity } from './entities/post.entity.js';
 
+// Posts can't be edited: delete and post again instead.
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -39,14 +38,6 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
   ): Promise<PostEntity> {
     return this.postsService.create(createPostDto);
-  }
-
-  @Patch(':id')
-  public async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() patchPostDto: PatchPostDto,
-  ): Promise<PostEntity> {
-    return this.postsService.update(id, patchPostDto);
   }
 
   @Delete(':id')

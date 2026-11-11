@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
+import { User } from '../users/entities/user.entity.js';
 import { UsersService } from '../users/users.service.js';
 import { CreatePostDto } from './dtos/create-post.dto.js';
-import { PatchPostDto } from './dtos/patch-post.dto.js';
 import { PostsQueryDto } from './dtos/posts-query.dto.js';
 import { Post } from './entities/post.entity.js';
 
@@ -16,10 +16,11 @@ export class PostsService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
+  // Newest first. Soft-deleted posts are skipped by find() automatically.
   public findAll({ authorId, limit, page }: PostsQueryDto): Promise<Post[]> {
     return this.postRepository.find({
       where: authorId ? { authorId } : {},
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC', id: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -31,44 +32,65 @@ export class PostsService {
 
   public async create({
     authorId,
-    title,
-    content,
+    body,
+    replyToId,
     featuredImageUrl,
-    publish,
   }: CreatePostDto): Promise<Post> {
     // Throws NotFoundException if the author doesn't exist.
     await this.usersService.findById(authorId);
 
-    const post = this.postRepository.create({
-      authorId,
-      title,
-      slug: await this.uniqueSlug(title),
-      content,
-      featuredImageUrl: featuredImageUrl ?? null,
-      publishedAt: publish ? new Date() : null,
+    // The post and the counters it changes are written together or not at all.
+    return this.postRepository.manager.transaction(async (manager) => {
+      if (replyToId && !(await manager.existsBy(Post, { id: replyToId }))) {
+        throw new NotFoundException(`Post with id ${replyToId} not found`);
+      }
+
+      const post = await manager.save(
+        manager.create(Post, {
+          authorId,
+          body,
+          replyToId: replyToId ?? null,
+          featuredImageUrl: featuredImageUrl ?? null,
+        }),
+      );
+
+      if (replyToId) {
+        await manager.increment(Post, { id: replyToId }, 'replyCount', 1);
+      }
+      await manager.increment(User, { id: authorId }, 'postCount', 1);
+
+      return post;
     });
-
-    return this.postRepository.save(post);
-  }
-
-  public async update(
-    id: string,
-    { publish, ...fields }: PatchPostDto,
-  ): Promise<Post> {
-    const post = await this.getPostOrThrow(id);
-
-    // The slug stays the same when the title changes, so links keep working.
-    this.postRepository.merge(post, fields);
-    if (publish !== undefined) {
-      post.publishedAt = publish ? (post.publishedAt ?? new Date()) : null;
-    }
-
-    return this.postRepository.save(post);
   }
 
   public async remove(id: string): Promise<void> {
     const post = await this.getPostOrThrow(id);
-    await this.postRepository.remove(post);
+
+    await this.postRepository.manager.transaction(async (manager) => {
+      // Soft delete: the row stays so replies keep their parent.
+      // "deletedAt IS NULL" makes a second, parallel delete a no-op, so the
+      // counters below are only changed once.
+      const { affected } = await manager.softDelete(Post, {
+        id,
+        deletedAt: IsNull(),
+      });
+      if (!affected) {
+        return;
+      }
+
+      if (post.replyToId) {
+        await manager.decrement(Post, { id: post.replyToId }, 'replyCount', 1);
+      }
+      if (post.repostOfId) {
+        await manager.decrement(
+          Post,
+          { id: post.repostOfId },
+          'repostCount',
+          1,
+        );
+      }
+      await manager.decrement(User, { id: post.authorId }, 'postCount', 1);
+    });
   }
 
   private async getPostOrThrow(id: string): Promise<Post> {
@@ -77,20 +99,5 @@ export class PostsService {
       throw new NotFoundException(`Post with id ${id} not found`);
     }
     return post;
-  }
-
-  // "My First Post!" -> "my-first-post", or "my-first-post-2" if taken.
-  private async uniqueSlug(title: string): Promise<string> {
-    const base =
-      title
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}]+/gu, '-')
-        .replace(/^-|-$/g, '') || 'post';
-
-    let slug = base;
-    for (let n = 2; await this.postRepository.existsBy({ slug }); n++) {
-      slug = `${base}-${n}`;
-    }
-    return slug;
   }
 }

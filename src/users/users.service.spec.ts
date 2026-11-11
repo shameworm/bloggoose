@@ -10,13 +10,13 @@ import { Not } from 'typeorm';
 
 import { AuthService } from '../auth/auth.service.js';
 import { User } from './entities/user.entity.js';
+import { USER_ROLES } from './entities/user-role.enum.js';
 import { UsersService } from './users.service.js';
 
 const id = '11111111-1111-4111-8111-111111111111';
 
 const john = {
-  firstName: 'John',
-  lastName: 'Doe',
+  displayName: 'John Doe',
   email: 'johndoe@example.com',
   username: 'makarena',
   password: 'Veryoriginal1!',
@@ -27,6 +27,12 @@ const storedJohn = (): User => ({
   id,
   avatarUrl: null,
   ...john,
+  bio: null,
+  bannerUrl: null,
+  followersCount: 0,
+  followingCount: 0,
+  postCount: 0,
+  role: USER_ROLES.USER,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -163,7 +169,7 @@ describe('UsersService', () => {
     repository.findOneBy.mockResolvedValue(storedJohn());
 
     const updated = await service.update(id, {
-      firstName: 'Johnny',
+      displayName: 'Johnny',
       email: john.email,
     });
 
@@ -171,13 +177,13 @@ describe('UsersService', () => {
       id: Not(id),
       email: john.email,
     });
-    expect(updated.firstName).toBe('Johnny');
-    expect(updated.lastName).toBe(john.lastName);
+    expect(updated.displayName).toBe('Johnny');
+    expect(updated.username).toBe(john.username);
     expect(updated).not.toHaveProperty('password');
   });
 
   it('throws NotFoundException when updating an unknown user', async () => {
-    await expect(service.update(id, { firstName: 'Johnny' })).rejects.toThrow(
+    await expect(service.update(id, { displayName: 'Johnny' })).rejects.toThrow(
       NotFoundException,
     );
     expect(repository.save).not.toHaveBeenCalled();

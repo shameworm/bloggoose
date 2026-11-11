@@ -4,7 +4,9 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
+  MinLength,
   validateSync,
+  Min,
 } from 'class-validator';
 
 export class EnvironmentVariables {
@@ -46,6 +48,30 @@ export class EnvironmentVariables {
   @IsInt()
   @IsNotEmpty()
   DB_PORT: number;
+
+  @IsString()
+  @IsNotEmpty()
+  CORS_ORIGIN: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(32)
+  JWT_ACCESS_SECRET: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(32)
+  JWT_REFRESH_SECRET: string;
+
+  @IsInt()
+  @IsNotEmpty()
+  @Min(1)
+  JWT_ACCESS_TTL: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  @Min(1)
+  JWT_REFRESH_TTL_DAYS: number;
 }
 
 export function validate(config: Record<string, unknown>) {

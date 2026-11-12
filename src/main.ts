@@ -1,11 +1,11 @@
 import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule, ObserveInstrument } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from './config/env.validation.js';
 import { createValidationPipe } from './common/pipes/validation.pipe.js';
+import { setupSwagger } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -16,15 +16,8 @@ async function bootstrap() {
   const port = config.get('PORT', { infer: true });
   app.useGlobalPipes(createValidationPipe());
 
-  // Swagger configuration
-  const swaggerConfig = new DocumentBuilder()
-    .setVersion('1.0')
-    .setTitle('BlogGoose')
-    .setDescription('REST API for BlogGoose users, posts and authentication')
-    .addServer(`http://localhost:${port}`)
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, document);
+  // UI at /api, OpenAPI JSON at /api-json.
+  setupSwagger(app, port);
 
   // Fills request.cookies; the refresh token arrives as a cookie.
   app.use(cookieParser());

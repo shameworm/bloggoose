@@ -178,4 +178,86 @@ describe('TokensService', () => {
   it('ignores an invalid token on logout', async () => {
     await expect(service.revoke('not-a-jwt')).resolves.toBeUndefined();
   });
+  it('stores the device name cut to 255 characters and an expiry date', async () => {
+    const before = Date.now();
+    const { refreshToken } = await service.issue(user, 'x'.repeat(300));
+
+    const { jti } = await jwt.verifyAsync<RefreshTokenPayload>(refreshToken, {
+      secret: env.JWT_REFRESH_SECRET as string,
+    });
+    const row = rows.get(jti);
+    expect(row?.deviceName).toHaveLength(255);
+    // 30 days from now.
+    const ttl = (row?.expiresAt.getTime() ?? 0) - before;
+    expect(ttl).toBeGreaterThanOrEqual(30 * 24 * 60 * 60 * 1000);
+    expect(ttl).toBeLessThan(30 * 24 * 60 * 60 * 1000 + 5000);
+  });
+
+  it('keeps the device name when rotating', async () => {
+    const first = await service.issue(user, 'phone');
+
+    const second = await service.rotate(first.refreshToken);
+
+    const { jti } = await jwt.verifyAsync<RefreshTokenPayload>(
+      second.refreshToken,
+      { secret: env.JWT_REFRESH_SECRET as string },
+    );
+    expect(rows.get(jti)?.deviceName).toBe('phone');
+  });
+
+  // Tokens signed with the right secret but not the ones we issued: someone
+  // who knows the refresh secret still can't use another user's row.
+  it('rejects a signed token whose hash does not match the row', async () => {
+    const { refreshToken } = await service.issue(user);
+    const { jti } = await jwt.verifyAsync<RefreshTokenPayload>(refreshToken, {
+      secret: env.JWT_REFRESH_SECRET as string,
+    });
+    const forged = await jwt.signAsync(
+      { sub: user.id, jti, extra: 'x' },
+      { secret: env.JWT_REFRESH_SECRET as string },
+    );
+
+    await expect(service.rotate(forged)).rejects.toThrow(
+      'Invalid refresh token',
+    );
+  });
+
+  it("rejects a signed token pointing at another user's row", async () => {
+    const { refreshToken } = await service.issue(user);
+    const { jti } = await jwt.verifyAsync<RefreshTokenPayload>(refreshToken, {
+      secret: env.JWT_REFRESH_SECRET as string,
+    });
+    const forged = await jwt.signAsync(
+      { sub: '99999999-9999-4999-8999-999999999999', jti },
+      { secret: env.JWT_REFRESH_SECRET as string },
+    );
+
+    await expect(service.rotate(forged)).rejects.toThrow(
+      'Invalid refresh token',
+    );
+  });
+
+  it('lets only one of two parallel refreshes with the same token win', async () => {
+    const { refreshToken } = await service.issue(user);
+
+    const results = await Promise.allSettled([
+      service.rotate(refreshToken),
+      service.rotate(refreshToken),
+    ]);
+
+    expect(results.map((r) => r.status).sort()).toEqual([
+      'fulfilled',
+      'rejected',
+    ]);
+  });
+
+  it('revokes every session of a user', async () => {
+    const laptop = await service.issue(user, 'laptop');
+    const phone = await service.issue(user, 'phone');
+
+    await service.revokeAllForUser(user.id);
+
+    await expect(service.rotate(laptop.refreshToken)).rejects.toThrow();
+    await expect(service.rotate(phone.refreshToken)).rejects.toThrow();
+  });
 });

@@ -111,4 +111,17 @@ describe('AuthService', () => {
     await service.logout('old');
     expect(tokensService.revoke).toHaveBeenCalledWith('old');
   });
+  it('returns the current user for /auth/me', async () => {
+    await expect(service.me(id)).resolves.toEqual(publicUser);
+    expect(usersService.findById).toHaveBeenCalledWith(id);
+  });
+
+  it('does not issue tokens when signup fails', async () => {
+    usersService.create.mockRejectedValue(new Error('Email is already taken'));
+
+    await expect(
+      service.signup({ email, username, password }, device),
+    ).rejects.toThrow('Email is already taken');
+    expect(tokensService.issue).not.toHaveBeenCalled();
+  });
 });

@@ -11,14 +11,28 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { ApiErrors } from '../common/swagger/api-errors.decorator.js';
 import type { EnvironmentVariables } from '../config/env.validation.js';
 import { CreateUserDto } from '../users/dtos/create-user.dto.js';
-import type { PublicUser } from '../users/entities/user.entity.js';
+import { User, type PublicUser } from '../users/entities/user.entity.js';
+import { REFRESH_COOKIE_AUTH } from '../swagger.js';
 import { AuthService } from './auth.service.js';
+import {
+  AccessTokenResponseDto,
+  AuthResponseDto,
+} from './dtos/auth-response.dto.js';
 import { LoginDto } from './dtos/login.dto.js';
 import { TokensService } from './tokens.service.js';
 import type { AccessTokenPayload } from './types/jwt-payload.type.js';
@@ -28,12 +42,20 @@ const REFRESH_COOKIE = 'refresh_token';
 // request. Update this when the API gets the /api/v1 prefix.
 const REFRESH_COOKIE_PATH = '/auth';
 
-interface AccessTokenResponse {
-  accessToken: string;
-}
+const SET_REFRESH_COOKIE = {
+  'Set-Cookie': {
+    description: 'The refresh token, as an httpOnly cookie for /auth',
+    schema: {
+      type: 'string',
+      example:
+        'refresh_token=eyJhbGciOi...; Max-Age=2592000; Path=/auth; HttpOnly; SameSite=Lax',
+    },
+  },
+};
 
 // The refresh token never appears in a response body: it lives only in an
 // httpOnly cookie that page JavaScript (and so an XSS attack) can't read.
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -44,11 +66,14 @@ export class AuthController {
 
   @Public()
   @Post('signup')
+  @ApiOperation({ summary: 'Create an account and log in' })
+  @ApiCreatedResponse({ type: AuthResponseDto, headers: SET_REFRESH_COOKIE })
+  @ApiErrors(400, 409)
   public async signup(
     @Body() createUserDto: CreateUserDto,
     @Headers('user-agent') userAgent: string | undefined,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AccessTokenResponse & { user: PublicUser }> {
+  ): Promise<AuthResponseDto> {
     const { user, accessToken, refreshToken } = await this.authService.signup(
       createUserDto,
       userAgent ?? null,
@@ -60,11 +85,17 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Log in with an email or username',
+    description: 'Seeded users: alice, bob, carol, dave, erin / password123.',
+  })
+  @ApiOkResponse({ type: AuthResponseDto, headers: SET_REFRESH_COOKIE })
+  @ApiErrors(400, [401, 'Invalid login or password'])
   public async login(
     @Body() loginDto: LoginDto,
     @Headers('user-agent') userAgent: string | undefined,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AccessTokenResponse & { user: PublicUser }> {
+  ): Promise<AuthResponseDto> {
     const { user, accessToken, refreshToken } = await this.authService.login(
       loginDto,
       userAgent ?? null,
@@ -78,10 +109,18 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth(REFRESH_COOKIE_AUTH)
+  @ApiOperation({
+    summary: 'Get a new access token',
+    description:
+      'Uses the refresh_token cookie and replaces it with a new one. Reusing an old refresh token logs the user out everywhere.',
+  })
+  @ApiOkResponse({ type: AccessTokenResponseDto, headers: SET_REFRESH_COOKIE })
+  @ApiErrors([401, 'Missing, invalid or reused refresh token'])
   public async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AccessTokenResponse> {
+  ): Promise<AccessTokenResponseDto> {
     const token = readRefreshCookie(req);
     if (!token) {
       throw new UnauthorizedException('Missing refresh token');
@@ -102,6 +141,13 @@ export class AuthController {
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth(REFRESH_COOKIE_AUTH)
+  @ApiOperation({
+    summary: 'Log out this device',
+    description:
+      'Revokes the refresh token and clears the cookie. Always 204, even without a cookie.',
+  })
+  @ApiNoContentResponse({ description: 'Logged out' })
   public async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -114,6 +160,9 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiOperation({ summary: 'The logged-in user' })
+  @ApiOkResponse({ type: User })
+  @ApiErrors(401)
   public me(@CurrentUser() user: AccessTokenPayload): Promise<PublicUser> {
     return this.authService.me(user.sub);
   }
